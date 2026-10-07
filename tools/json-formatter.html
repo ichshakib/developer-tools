@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JSON Formatter & Validator - DevTools</title>
+  <meta name="description" content="Validate, beautify, inspect, and minify JSON payloads with syntax error detection and sorting options. 100% private in-browser tool.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+  <link rel="manifest" href="../favicon_io/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <script src="../components.js"></script>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link">&larr; Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">JSON Formatter & Validator</h1>
+          <span class="tool-badge">Formatters</span>
+        </div>
+        <p class="tool-page-desc">Beautify raw JSON, minify payloads for production, inspect hierarchy, and detect syntax errors with pinpoint accuracy.</p>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem;">
+        <button id="btn-format" class="btn-sm btn-primary">Format JSON</button>
+        <button id="btn-minify" class="btn-sm">Minify / Compact</button>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Indentation:</span>
+          <select id="opt-indent" class="tool-select">
+            <option value="2">2 Spaces</option>
+            <option value="4">4 Spaces</option>
+            <option value="tab">Tabs</option>
+          </select>
+        </div>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-sort">
+          <span>Sort Keys Alphabetically</span>
+        </label>
+      </div>
+
+      <!-- Main Workspace -->
+      <div class="tool-workspace">
+        <!-- Input Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title">Raw JSON Input</span>
+            <div class="panel-actions">
+              <input type="file" id="file-input" accept=".json,text/plain" style="display: none;">
+              <button id="btn-upload" class="btn-sm">Upload .json</button>
+              <button id="btn-clear" class="btn-sm">Clear</button>
+            </div>
+          </div>
+          <textarea id="input-json" class="tool-textarea" style="min-height: 340px;" placeholder="Paste raw JSON here..." spellcheck="false"></textarea>
+          <div class="panel-footer">
+            <span id="input-stats">0 characters</span>
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title">Formatted / Validated Output</span>
+            <div class="panel-actions">
+              <button id="btn-copy" class="btn-sm btn-primary">Copy</button>
+              <button id="btn-download" class="btn-sm">Download .json</button>
+            </div>
+          </div>
+          <textarea id="output-json" class="tool-textarea" readonly spellcheck="false" style="min-height: 340px;" placeholder="Formatted JSON will appear here..."></textarea>
+          
+          <div id="validation-banner" style="padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-family: var(--font-mono); display: none;"></div>
+
+          <div class="panel-footer">
+            <span id="output-stats">0 characters</span>
+            <span id="status-badge" style="font-weight: 600;">Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="common.js"></script>
+  <script>
+    const inputJson = document.getElementById('input-json');
+    const outputJson = document.getElementById('output-json');
+    const optIndent = document.getElementById('opt-indent');
+    const optSort = document.getElementById('opt-sort');
+    const btnFormat = document.getElementById('btn-format');
+    const btnMinify = document.getElementById('btn-minify');
+    const inputStats = document.getElementById('input-stats');
+    const outputStats = document.getElementById('output-stats');
+    const statusBadge = document.getElementById('status-badge');
+    const validationBanner = document.getElementById('validation-banner');
+
+    function sortObjectKeys(obj) {
+      if (typeof obj !== 'object' || obj === null) return obj;
+      if (Array.isArray(obj)) return obj.map(sortObjectKeys);
+      return Object.keys(obj).sort().reduce((acc, key) => {
+        acc[key] = sortObjectKeys(obj[key]);
+        return acc;
+      }, {});
+    }
+
+    function processJson(minify = false) {
+      const raw = inputJson.value.trim();
+      inputStats.textContent = `${raw.length} characters`;
+
+      if (!raw) {
+        outputJson.value = '';
+        outputStats.textContent = '0 characters';
+        statusBadge.textContent = 'Ready';
+        statusBadge.style.color = 'var(--text-muted)';
+        validationBanner.style.display = 'none';
+        return;
+      }
+
+      try {
+        let parsed = JSON.parse(raw);
+        if (optSort.checked) {
+          parsed = sortObjectKeys(parsed);
+        }
+
+        let indent = 2;
+        if (optIndent.value === '4') indent = 4;
+        else if (optIndent.value === 'tab') indent = '\t';
+
+        const result = minify ? JSON.stringify(parsed) : JSON.stringify(parsed, null, indent);
+        outputJson.value = result;
+        outputStats.textContent = `${result.length} chars (valid)`;
+
+        statusBadge.textContent = minify ? 'Valid & Minified' : 'Valid & Formatted';
+        statusBadge.style.color = 'var(--accent-emerald, #10b981)';
+
+        validationBanner.style.display = 'block';
+        validationBanner.style.background = 'rgba(16, 185, 129, 0.1)';
+        validationBanner.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+        validationBanner.style.color = 'var(--accent-emerald, #10b981)';
+        validationBanner.textContent = 'Valid JSON Syntax';
+      } catch (err) {
+        outputJson.value = '';
+        outputStats.textContent = '0 characters';
+        statusBadge.textContent = 'Invalid JSON';
+        statusBadge.style.color = '#ef4444';
+
+        validationBanner.style.display = 'block';
+        validationBanner.style.background = 'rgba(239, 68, 68, 0.1)';
+        validationBanner.style.border = '1px solid rgba(239, 68, 68, 0.25)';
+        validationBanner.style.color = '#ef4444';
+        validationBanner.textContent = err.message;
+      }
+    }
+
+    btnFormat.addEventListener('click', () => processJson(false));
+    btnMinify.addEventListener('click', () => processJson(true));
+    optSort.addEventListener('change', () => processJson(false));
+    optIndent.addEventListener('change', () => processJson(false));
+
+    let debounceTimer = null;
+    inputJson.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => processJson(false), 300);
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      copyToClipboard(outputJson.value, 'JSON Output');
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+      downloadTextFile('formatted.json', outputJson.value, 'application/json');
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputJson.value = '';
+      outputJson.value = '';
+      validationBanner.style.display = 'none';
+      statusBadge.textContent = 'Ready';
+      statusBadge.style.color = 'var(--text-muted)';
+      inputStats.textContent = '0 characters';
+      outputStats.textContent = '0 characters';
+      inputJson.focus();
+    });
+
+    const fileInput = document.getElementById('file-input');
+    document.getElementById('btn-upload').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        inputJson.value = reader.result;
+        processJson(false);
+      };
+      reader.readAsText(file);
+    });
+
+    // Ready
+  </script>
+</body>
+</html>

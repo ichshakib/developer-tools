@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Image Compressor - DevTools</title>
+  <meta name="description" content="100% private, client-side image compressor. Shrink JPEG, PNG, and WebP images with custom quality control and live size comparison.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    .compressor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 820px) {
+      .compressor-grid { grid-template-columns: 1fr; }
+    }
+    .preview-box {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Image Compressor</h1>
+          <span class="tool-badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);">Image</span>
+        </div>
+        <p class="tool-page-desc">Compress PNG, JPEG, and WebP images directly in your browser. Reduce file size up to 90% without uploading images to any server.</p>
+      </div>
+
+      <!-- Dropzone -->
+      <div class="tool-panel" style="margin-bottom: 1.25rem;">
+        <input type="file" id="file-input" accept="image/*" style="display: none;">
+        <div id="dropzone" class="dropzone">
+          <div class="dropzone-icon"><i data-lucide="image-down" style="width: 32px; height: 32px;"></i></div>
+          <p class="dropzone-text"><strong>Click to upload</strong> or drag and drop your image here</p>
+          <p class="dropzone-subtext">JPEG, PNG, WebP, SVG, BMP</p>
+        </div>
+      </div>
+
+      <!-- Controls & Sliders -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1.25rem;">
+        <div style="flex: 1; min-width: 220px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem;">
+            <span>Compression Quality:</span>
+            <span id="val-quality" style="font-family: var(--font-mono); color: var(--accent-color);">80%</span>
+          </div>
+          <input type="range" id="slider-quality" min="5" max="100" value="80" style="width: 100%; cursor: pointer;">
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Output Format</label>
+          <select id="format-select" style="padding: 0.35rem 0.6rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="image/webp">WebP (Smallest file size)</option>
+            <option value="image/jpeg">JPEG / JPG</option>
+            <option value="image/png">PNG</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Max Width Scale</label>
+          <select id="scale-select" style="padding: 0.35rem 0.6rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="original">Original Dimensions</option>
+            <option value="1920">1920px (Full HD)</option>
+            <option value="1280">1280px (HD)</option>
+            <option value="800">800px (Web)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Side-by-side Comparison -->
+      <div class="compressor-grid" id="comparison-section" style="display: none;">
+        <!-- Original -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title"><i data-lucide="file-image"></i> Original Image</span>
+            <span class="pill-badge" id="orig-size-pill">0 KB</span>
+          </div>
+          <div class="preview-box">
+            <img id="orig-preview" alt="Original Preview">
+          </div>
+          <div style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary);">
+            <div id="orig-dimensions">Dimensions: —</div>
+          </div>
+        </div>
+
+        <!-- Compressed -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title"><i data-lucide="sparkles"></i> Compressed Result</span>
+            <span class="pill-badge active" id="savings-pill">-0% Saved</span>
+          </div>
+          <div class="preview-box">
+            <img id="comp-preview" alt="Compressed Preview">
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary);">
+              <div id="comp-size">Size: —</div>
+              <div id="comp-dimensions">Dimensions: —</div>
+            </div>
+            <button id="btn-download" class="btn-sm btn-primary"><i data-lucide="download"></i> Download Image</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+  <script>
+    let sourceImg = null;
+    let origFile = null;
+    let compressedBlob = null;
+
+    const fileInput = document.getElementById('file-input');
+    const dropzone = document.getElementById('dropzone');
+    const sliderQuality = document.getElementById('slider-quality');
+    const valQuality = document.getElementById('val-quality');
+    const formatSelect = document.getElementById('format-select');
+    const scaleSelect = document.getElementById('scale-select');
+    const comparisonSection = document.getElementById('comparison-section');
+    const origPreview = document.getElementById('orig-preview');
+    const compPreview = document.getElementById('comp-preview');
+    const origSizePill = document.getElementById('orig-size-pill');
+    const savingsPill = document.getElementById('savings-pill');
+    const origDimensions = document.getElementById('orig-dimensions');
+    const compSize = document.getElementById('comp-size');
+    const compDimensions = document.getElementById('comp-dimensions');
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) handleImage(e.target.files[0]);
+    });
+
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) handleImage(e.dataTransfer.files[0]);
+    });
+
+    function handleImage(file) {
+      origFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        sourceImg = new Image();
+        sourceImg.onload = () => {
+          origPreview.src = e.target.result;
+          origSizePill.textContent = formatBytes(origFile.size);
+          origDimensions.textContent = `Dimensions: ${sourceImg.naturalWidth} x ${sourceImg.naturalHeight} px`;
+          comparisonSection.style.display = 'grid';
+          compress();
+        };
+        sourceImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function compress() {
+      if (!sourceImg) return;
+      const quality = parseInt(sliderQuality.value, 10) / 100;
+      valQuality.textContent = `${sliderQuality.value}%`;
+
+      const format = formatSelect.value;
+      const maxScale = scaleSelect.value;
+
+      let targetW = sourceImg.naturalWidth;
+      let targetH = sourceImg.naturalHeight;
+
+      if (maxScale !== 'original') {
+        const maxDim = parseInt(maxScale, 10);
+        if (targetW > maxDim) {
+          targetH = Math.round((targetH * maxDim) / targetW);
+          targetW = maxDim;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(sourceImg, 0, 0, targetW, targetH);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        compressedBlob = blob;
+        compPreview.src = URL.createObjectURL(blob);
+        compSize.textContent = `Size: ${formatBytes(blob.size)}`;
+        compDimensions.textContent = `Dimensions: ${targetW} x ${targetH} px`;
+
+        const diff = origFile.size - blob.size;
+        const pct = Math.round((diff / origFile.size) * 100);
+        if (pct >= 0) {
+          savingsPill.textContent = `-${pct}% Saved`;
+          savingsPill.style.background = 'var(--accent-color)';
+        } else {
+          savingsPill.textContent = `+${Math.abs(pct)}% Larger`;
+          savingsPill.style.background = '#e11d48';
+        }
+      }, format, quality);
+    }
+
+    sliderQuality.addEventListener('input', compress);
+    formatSelect.addEventListener('change', compress);
+    scaleSelect.addEventListener('change', compress);
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+      if (!compressedBlob) return;
+      const ext = formatSelect.value.split('/')[1].replace('jpeg', 'jpg');
+      const filename = `compressed-image.${ext}`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(compressedBlob);
+      a.download = filename;
+      a.click();
+      showToast('Downloaded', `Saved ${filename}`);
+    });
+  </script>
+</body>
+</html>

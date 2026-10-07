@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>URL Encoder / Decoder - DevTools</title>
+  <meta name="description" content="Safely escape and unescape query parameters, URIs, and special percent-encoded characters according to RFC 3986 with URL inspector.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+  <link rel="manifest" href="../favicon_io/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <script src="../components.js"></script>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link">&larr; Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">URL Encoder / Decoder</h1>
+          <span class="tool-badge">Converters</span>
+        </div>
+        <p class="tool-page-desc">Encode special characters and query strings to percent-encoded format or decode encoded URLs back to human-readable strings.</p>
+      </div>
+
+      <!-- Controls & Options -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem;">
+        <div style="display: flex; gap: 0.35rem;">
+          <button id="mode-encode" class="btn-sm btn-primary">Encode</button>
+          <button id="mode-decode" class="btn-sm">Decode</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Scope:</span>
+          <select id="opt-scope" class="tool-select">
+            <option value="component">Component (encodeURIComponent - All special chars)</option>
+            <option value="full">Full URL (encodeURI - Preserves ://?#)</option>
+          </select>
+        </div>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-plus">
+          <span>Encode spaces as + instead of %20</span>
+        </label>
+      </div>
+
+      <!-- Workspace -->
+      <div class="tool-workspace">
+        <!-- Input Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title" id="input-label">Input String / URL</span>
+            <div class="panel-actions">
+              <button id="btn-clear" class="btn-sm">Clear</button>
+            </div>
+          </div>
+          <textarea id="input-text" class="tool-textarea" placeholder="Paste URL or string here..." spellcheck="false"></textarea>
+          <div class="panel-footer">
+            <span id="input-stats">0 characters</span>
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title" id="output-label">Result</span>
+            <div class="panel-actions">
+              <button id="btn-copy" class="btn-sm btn-primary">Copy</button>
+              <button id="btn-swap" class="btn-sm">Swap</button>
+            </div>
+          </div>
+          <textarea id="output-text" class="tool-textarea" readonly spellcheck="false" placeholder="Result will appear here..."></textarea>
+          <div class="panel-footer">
+            <span id="output-stats">0 characters</span>
+            <span id="status-text">Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL Breakdown / Inspector -->
+      <div class="tool-panel" style="margin-bottom: 2.5rem;">
+        <span class="panel-title">URL Parameter Inspector</span>
+        <div id="inspector-grid" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="common.js"></script>
+  <script>
+    let currentMode = 'encode';
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const modeEncode = document.getElementById('mode-encode');
+    const modeDecode = document.getElementById('mode-decode');
+    const optScope = document.getElementById('opt-scope');
+    const optPlus = document.getElementById('opt-plus');
+    const inputLabel = document.getElementById('input-label');
+    const outputLabel = document.getElementById('output-label');
+    const inputStats = document.getElementById('input-stats');
+    const outputStats = document.getElementById('output-stats');
+    const statusText = document.getElementById('status-text');
+    const inspectorGrid = document.getElementById('inspector-grid');
+
+    function process() {
+      const val = inputText.value;
+      inputStats.textContent = `${val.length} characters`;
+
+      if (!val) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        statusText.textContent = 'Ready';
+        inspectorGrid.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Enter a valid URL above to inspect its parameters.</span>';
+        return;
+      }
+
+      try {
+        let res = '';
+        if (currentMode === 'encode') {
+          if (optScope.value === 'component') {
+            res = encodeURIComponent(val);
+          } else {
+            res = encodeURI(val);
+          }
+          if (optPlus.checked) {
+            res = res.replace(/%20/g, '+');
+          }
+          statusText.textContent = 'Encoded';
+        } else {
+          let toDecode = val;
+          if (optPlus.checked || toDecode.includes('+')) {
+            toDecode = toDecode.replace(/\+/g, '%20');
+          }
+          if (optScope.value === 'component') {
+            res = decodeURIComponent(toDecode);
+          } else {
+            res = decodeURI(toDecode);
+          }
+          statusText.textContent = 'Decoded';
+        }
+        outputText.value = res;
+        outputStats.textContent = `${res.length} characters`;
+      } catch (err) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        statusText.textContent = 'Error: Malformed URI sequence';
+      }
+
+      inspectUrl(val);
+    }
+
+    function inspectUrl(val) {
+      try {
+        const url = new URL(val);
+        let html = `
+          <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem; font-size: 0.825rem; font-family: var(--font-mono); padding: 0.5rem; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <span style="color: var(--text-muted);">Protocol:</span><span>${url.protocol}</span>
+            <span style="color: var(--text-muted);">Host:</span><span>${url.host}</span>
+            <span style="color: var(--text-muted);">Pathname:</span><span>${url.pathname}</span>
+            <span style="color: var(--text-muted);">Hash:</span><span>${url.hash || '(none)'}</span>
+          </div>
+        `;
+
+        const params = Array.from(url.searchParams.entries());
+        if (params.length > 0) {
+          html += `<div style="margin-top: 0.65rem; font-size: 0.775rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary);">Query Parameters (${params.length}):</div>`;
+          html += `<div style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.35rem;">`;
+          params.forEach(([k, v]) => {
+            html += `
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; padding: 0.35rem 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem;">
+                <span style="font-weight: 600; color: var(--text-primary); word-break: break-all;">${k}</span>
+                <span style="color: var(--text-secondary); word-break: break-all;">${v}</span>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+        inspectorGrid.innerHTML = html;
+      } catch (e) {
+        inspectorGrid.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Enter a full URL (with https://) to inspect parameters.</span>';
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'encode') {
+        modeEncode.classList.add('btn-primary');
+        modeDecode.classList.remove('btn-primary');
+        inputLabel.textContent = 'Input Plain String / URL';
+        outputLabel.textContent = 'Encoded Output';
+      } else {
+        modeDecode.classList.add('btn-primary');
+        modeEncode.classList.remove('btn-primary');
+        inputLabel.textContent = 'Input Percent-Encoded String';
+        outputLabel.textContent = 'Decoded Output';
+      }
+      process();
+    }
+
+    modeEncode.addEventListener('click', () => setMode('encode'));
+    modeDecode.addEventListener('click', () => setMode('decode'));
+    inputText.addEventListener('input', process);
+    optScope.addEventListener('change', process);
+    optPlus.addEventListener('change', process);
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      copyToClipboard(outputText.value, 'Result');
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      inspectorGrid.innerHTML = '';
+      inputStats.textContent = '0 characters';
+      outputStats.textContent = '0 characters';
+      statusText.textContent = 'Ready';
+      inputText.focus();
+    });
+
+    document.getElementById('btn-swap').addEventListener('click', () => {
+      const temp = outputText.value;
+      if (!temp) return;
+      inputText.value = temp;
+      setMode(currentMode === 'encode' ? 'decode' : 'encode');
+    });
+
+    process();
+  </script>
+</body>
+</html>

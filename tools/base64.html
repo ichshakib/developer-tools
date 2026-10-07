@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Base64 Encoder / Decoder - DevTools</title>
+  <meta name="description" content="Fast, private client-side Base64 encoder and decoder for text, files, images, and Data URIs with live image previews and detailed file metadata.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+  <link rel="manifest" href="../favicon_io/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    /* Scoped styling for Base64 Tool enhancements */
+    .file-details-card {
+      margin-top: 0.85rem;
+      padding: 0.85rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md, 8px);
+      background: var(--bg-secondary);
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .file-details-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .file-details-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .file-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.5rem 0.75rem;
+    }
+
+    .file-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .file-meta-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+    }
+
+    .file-meta-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    /* Checkered container for transparent images */
+    .preview-container {
+      position: relative;
+      border-radius: var(--radius-sm, 6px);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      max-height: 240px;
+      background-color: #121212;
+      background-image: 
+        linear-gradient(45deg, #1a1a1a 25%, transparent 25%), 
+        linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #1a1a1a 75%), 
+        linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+
+    [data-theme="light"] .preview-container {
+      background-color: #f5f5f5;
+      background-image: 
+        linear-gradient(45deg, #e5e5e5 25%, transparent 25%), 
+        linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #e5e5e5 75%), 
+        linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.2s ease;
+    }
+
+    .preview-badge {
+      position: absolute;
+      bottom: 0.4rem;
+      right: 0.4rem;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    [data-theme="light"] .preview-badge {
+      background: rgba(255, 255, 255, 0.85);
+      color: #111;
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+
+    /* Drag and drop highlight */
+    .tool-panel.dragover {
+      border-color: var(--accent-color, #3b82f6) !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-group {
+      display: inline-flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-sm {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-sm .lucide,
+    .file-details-title .lucide {
+      width: 0.92rem;
+      height: 0.92rem;
+      stroke-width: 2;
+      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .pill-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 12px;
+      background: var(--border-color);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .pill-badge.active {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Base64 Encoder / Decoder</h1>
+          <span class="tool-badge">Converters</span>
+        </div>
+        <p class="tool-page-desc">Encode plain text and binary files to Base64 or Data URIs, or decode Base64 back to text or files. Includes metadata inspector and instant image preview.</p>
+      </div>
+
+      <!-- Controls & Options -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.85rem;">
+        <div class="btn-group">
+          <button id="mode-encode" class="btn-sm btn-primary">Encode</button>
+          <button id="mode-decode" class="btn-sm">Decode</button>
+        </div>
+
+        <label class="option-group" id="opt-data-uri-wrapper" title="Prefixes Base64 with data:[mime];base64, for direct use in browsers and image tags">
+          <input type="checkbox" id="opt-data-uri" checked>
+          <span>Include Data URI prefix (<code>data:[mime];base64,...</code>)</span>
+        </label>
+
+        <label class="option-group" title="RFC 4648 URL-safe base64 using '-' and '_' instead of '+' and '/'">
+          <input type="checkbox" id="opt-url-safe">
+          <span>URL-Safe Base64 (- and _)</span>
+        </label>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-live" checked>
+          <span>Live conversion</span>
+        </label>
+      </div>
+
+      <!-- Main Workspace -->
+      <div class="tool-workspace">
+        <!-- Input Panel (Left) -->
+        <div class="tool-panel" id="input-panel">
+          <div class="panel-header">
+            <span class="panel-title" id="input-label">Input Plain Text or File</span>
+            <div class="panel-actions">
+              <input type="file" id="file-input" style="display: none;">
+              <button id="btn-upload-file" class="btn-sm" title="Upload any text or binary file from your computer">
+                <i data-lucide="upload"></i> Upload File
+              </button>
+              <button id="btn-clear" class="btn-sm">
+                <i data-lucide="trash-2"></i> Clear
+              </button>
+            </div>
+          </div>
+
+          <textarea id="input-text" class="tool-textarea" placeholder="Type or paste content here, or drag & drop a file..." spellcheck="false" style="min-height: 180px;"></textarea>
+
+          <!-- Input File Details Card -->
+          <div id="input-file-card" class="file-details-card" style="display: none;">
+            <div class="file-details-header">
+              <span class="file-details-title">
+                <span id="input-card-title-icon"><i data-lucide="file-text"></i></span>
+                <span id="input-card-title-text">Input File Details</span>
+                <span id="input-type-pill" class="pill-badge">File</span>
+              </span>
+              <button id="btn-remove-file" class="btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                <i data-lucide="x"></i> Remove
+              </button>
+            </div>
+
+            <!-- Input Image Preview -->
+            <div id="input-preview-box" class="preview-container" style="display: none;">
+              <img id="input-preview-img" class="preview-image" alt="Input Image Preview">
+              <span id="input-dimensions-badge" class="preview-badge">0 × 0 px</span>
+            </div>
+
+            <div class="file-meta-grid">
+              <div class="file-meta-item">
+                <span class="file-meta-label">File Name</span>
+                <span class="file-meta-value" id="input-meta-name">—</span>
+              </div>
+              <div class="file-meta-item">
+                <span class="file-meta-label">MIME Type</span>
+                <span class="file-meta-value" id="input-meta-mime">—</span>
+              </div>
+              <div class="file-meta-item">
+                <span class="file-meta-label">Original Size</span>
+                <span class="file-meta-value" id="input-meta-size">—</span>
+              </div>
+              <div class="file-meta-item" id="input-meta-mod-item">
+                <span class="file-meta-label">Last Modified</span>
+                <span class="file-meta-value" id="input-meta-modified">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-footer" style="margin-top: 0.75rem;">
+            <span id="input-stats">0 characters</span>
+            <span id="input-file-indicator" style="color: var(--text-secondary); font-size: 0.75rem;">Drop files here</span>
+          </div>
+        </div>
+
+        <!-- Output Panel (Right) -->
+        <div class="tool-panel" id="output-panel">
+          <div class="panel-header">
+            <span class="panel-title" id="output-label">Output Base64 / Data URI</span>
+            <div class="panel-actions">
+              <button id="btn-copy" class="btn-sm btn-primary">
+                <i data-lucide="copy"></i> Copy
+              </button>
+              <button id="btn-copy-raw" class="btn-sm" style="display: none;" title="Copy raw Base64 without data URI prefix">
+                <i data-lucide="clipboard-copy"></i> Copy Raw
+              </button>
+              <button id="btn-open-tab" class="btn-sm" style="display: none;" title="Open Data URI directly in a new browser tab">
+                <i data-lucide="external-link"></i> Open
+              </button>
+              <button id="btn-download" class="btn-sm">
+                <i data-lucide="download"></i> Download
+              </button>
+              <button id="btn-swap" class="btn-sm" title="Swap input and output">
+                <i data-lucide="arrow-left-right"></i> Swap
+              </button>
+            </div>
+          </div>
+
+          <textarea id="output-text" class="tool-textarea" placeholder="Result will appear here..." readonly spellcheck="false" style="min-height: 180px;"></textarea>
+
+          <!-- Output File Details Card -->
+          <div id="output-file-card" class="file-details-card" style="display: none;">
+            <div class="file-details-header">
+              <span class="file-details-title">
+                <span id="output-card-title-icon"><i data-lucide="file-check"></i></span>
+                <span id="output-card-title-text">Output Details</span>
+                <span id="output-format-pill" class="pill-badge active">Base64</span>
+              </span>
+              <button id="btn-save-decoded" class="btn-sm btn-primary" style="display: none; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+                <i data-lucide="download"></i> Download File
+              </button>
+            </div>
+
+            <!-- Output Image Preview -->
+            <div id="output-preview-box" class="preview-container" style="display: none;">
+              <img id="output-preview-img" class="preview-image" alt="Output Image Preview">
+              <span id="output-dimensions-badge" class="preview-badge">0 × 0 px</span>
+            </div>
+
+            <div class="file-meta-grid">
+              <div class="file-meta-item">
+                <span class="file-meta-label">Format Type</span>
+                <span class="file-meta-value" id="output-meta-format">—</span>
+              </div>
+              <div class="file-meta-item">
+                <span class="file-meta-label">Detected MIME</span>
+                <span class="file-meta-value" id="output-meta-mime">—</span>
+              </div>
+              <div class="file-meta-item">
+                <span class="file-meta-label">Output Length</span>
+                <span class="file-meta-value" id="output-meta-length">—</span>
+              </div>
+              <div class="file-meta-item">
+                <span class="file-meta-label">Payload Size</span>
+                <span class="file-meta-value" id="output-meta-size">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-footer" style="margin-top: 0.75rem;">
+            <span id="output-stats">0 characters</span>
+            <span id="output-status">Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="common.js"></script>
+  <script>
+    // Lucide Icons Helper
+    function refreshIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+
+    // Application State
+    let currentMode = 'encode'; // 'encode' | 'decode'
+    let currentUploadedFile = null;
+    let currentRawBase64 = '';
+    let currentDataUri = '';
+    let currentDecodedBlob = null;
+    let currentDecodedFileName = 'decoded-file';
+
+    // DOM Elements
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const modeEncode = document.getElementById('mode-encode');
+    const modeDecode = document.getElementById('mode-decode');
+    const inputLabel = document.getElementById('input-label');
+    const outputLabel = document.getElementById('output-label');
+    const optDataUriWrapper = document.getElementById('opt-data-uri-wrapper');
+    const optDataUri = document.getElementById('opt-data-uri');
+    const optUrlSafe = document.getElementById('opt-url-safe');
+    const optLive = document.getElementById('opt-live');
+    const inputStats = document.getElementById('input-stats');
+    const outputStats = document.getElementById('output-stats');
+    const outputStatus = document.getElementById('output-status');
+
+    // Input File Details Card Elements
+    const inputFileCard = document.getElementById('input-file-card');
+    const inputCardTitleIcon = document.getElementById('input-card-title-icon');
+    const inputCardTitleText = document.getElementById('input-card-title-text');
+    const inputTypePill = document.getElementById('input-type-pill');
+    const inputPreviewBox = document.getElementById('input-preview-box');
+    const inputPreviewImg = document.getElementById('input-preview-img');
+    const inputDimensionsBadge = document.getElementById('input-dimensions-badge');
+    const inputMetaName = document.getElementById('input-meta-name');
+    const inputMetaMime = document.getElementById('input-meta-mime');
+    const inputMetaSize = document.getElementById('input-meta-size');
+    const inputMetaModified = document.getElementById('input-meta-modified');
+    const inputMetaModItem = document.getElementById('input-meta-mod-item');
+    const btnRemoveFile = document.getElementById('btn-remove-file');
+
+    // Output Details Card Elements
+    const outputFileCard = document.getElementById('output-file-card');
+    const outputCardTitleIcon = document.getElementById('output-card-title-icon');
+    const outputCardTitleText = document.getElementById('output-card-title-text');
+    const outputFormatPill = document.getElementById('output-format-pill');
+    const outputPreviewBox = document.getElementById('output-preview-box');
+    const outputPreviewImg = document.getElementById('output-preview-img');
+    const outputDimensionsBadge = document.getElementById('output-dimensions-badge');
+    const outputMetaFormat = document.getElementById('output-meta-format');
+    const outputMetaMime = document.getElementById('output-meta-mime');
+    const outputMetaLength = document.getElementById('output-meta-length');
+    const outputMetaSize = document.getElementById('output-meta-size');
+    const btnSaveDecoded = document.getElementById('btn-save-decoded');
+    const btnCopyRaw = document.getElementById('btn-copy-raw');
+    const btnOpenTab = document.getElementById('btn-open-tab');
+
+    // Utility: Format human readable byte size
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Convert UTF-8 string to base64
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      let b64 = btoa(binary);
+      if (optUrlSafe.checked) {
+        b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+      return b64;
+    }
+
+    // Convert Base64 string to Uint8Array
+    function base64ToUint8Array(b64) {
+      let normalized = b64.trim();
+      if (normalized.includes('-') || normalized.includes('_')) {
+        normalized = normalized.replace(/-/g, '+').replace(/_/g, '/');
+        while (normalized.length % 4) normalized += '=';
+      }
+      const binary = atob(normalized);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    // Convert Uint8Array to UTF-8 text string
+    function uint8ArrayToUtf8(bytes) {
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    }
+
+    // Detect MIME type from magic binary bytes
+    function detectMimeTypeFromBytes(bytes) {
+      if (!bytes || bytes.length < 4) return 'application/octet-stream';
+
+      // PNG: 89 50 4E 47 0D 0A 1A 0A
+      if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+        return 'image/png';
+      }
+      // JPEG: FF D8 FF
+      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+        return 'image/jpeg';
+      }
+      // GIF: 47 49 46 38 ('GIF8')
+      if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+        return 'image/gif';
+      }
+      // WEBP: RIFF....WEBP
+      if (bytes.length >= 12 &&
+          bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+          bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+        return 'image/webp';
+      }
+      // BMP: 42 4D
+      if (bytes[0] === 0x42 && bytes[1] === 0x4D) {
+        return 'image/bmp';
+      }
+      // PDF: 25 50 44 46 ('%PDF')
+      if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+        return 'application/pdf';
+      }
+      // ZIP: 50 4B 03 04
+      if (bytes[0] === 0x50 && bytes[1] === 0x4B && (bytes[2] === 0x03 || bytes[2] === 0x05)) {
+        return 'application/zip';
+      }
+
+      // Check for SVG
+      try {
+        const snippet = new TextDecoder('utf-8').decode(bytes.slice(0, 120)).trim().toLowerCase();
+        if (snippet.includes('<svg') || (snippet.includes('<?xml') && snippet.includes('<svg'))) {
+          return 'image/svg+xml';
+        }
+      } catch (e) {}
+
+      return 'application/octet-stream';
+    }
+
+    // Process conversion
+    function process() {
+      if (currentMode === 'encode') {
+        processEncode();
+      } else {
+        processDecode();
+      }
+      refreshIcons();
+    }
+
+    // Encode logic
+    function processEncode() {
+      if (currentUploadedFile) {
+        return;
+      }
+
+      const val = inputText.value;
+      inputStats.textContent = `${val.length.toLocaleString()} characters`;
+
+      if (!val) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        outputStatus.textContent = 'Ready';
+        outputFileCard.style.display = 'none';
+        btnCopyRaw.style.display = 'none';
+        btnOpenTab.style.display = 'none';
+        return;
+      }
+
+      try {
+        const rawB64 = utf8ToBase64(val);
+        currentRawBase64 = rawB64;
+        const mime = 'text/plain';
+        const dataUri = `data:${mime};charset=utf-8;base64,${rawB64}`;
+        currentDataUri = dataUri;
+
+        if (optDataUri.checked) {
+          outputText.value = dataUri;
+          btnCopyRaw.style.display = 'inline-flex';
+        } else {
+          outputText.value = rawB64;
+          btnCopyRaw.style.display = 'none';
+        }
+
+        outputStats.textContent = `${outputText.value.length.toLocaleString()} characters`;
+        outputStatus.textContent = 'Encoded';
+
+        // Update Output details card
+        outputFileCard.style.display = 'flex';
+        outputCardTitleIcon.innerHTML = '<i data-lucide="file-check"></i>';
+        outputCardTitleText.textContent = 'Output Base64 Details';
+        outputFormatPill.textContent = optDataUri.checked ? 'Data URI' : 'Raw Base64';
+        outputMetaFormat.textContent = optDataUri.checked ? 'RFC 2397 Data URI' : 'Standard Base64';
+        outputMetaMime.textContent = 'text/plain (UTF-8)';
+        outputMetaLength.textContent = `${outputText.value.length.toLocaleString()} chars`;
+        outputMetaSize.textContent = `${formatBytes(new Blob([val]).size)} text payload`;
+        
+        outputPreviewBox.style.display = 'none';
+        btnSaveDecoded.style.display = 'none';
+        btnOpenTab.style.display = optDataUri.checked ? 'inline-flex' : 'none';
+        btnOpenTab.onclick = () => {
+          const w = window.open('');
+          w.document.write(`<title>Data URI Preview</title><body style="margin:20px;font-family:monospace;white-space:pre-wrap;">${escapeHtml(val)}</body>`);
+        };
+      } catch (err) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        outputStatus.textContent = 'Error: ' + err.message;
+        outputFileCard.style.display = 'none';
+        btnCopyRaw.style.display = 'none';
+        btnOpenTab.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Decode logic
+    function processDecode() {
+      const rawInput = inputText.value.trim();
+      inputStats.textContent = `${rawInput.length.toLocaleString()} characters`;
+
+      if (!rawInput) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        outputStatus.textContent = 'Ready';
+        inputFileCard.style.display = 'none';
+        outputFileCard.style.display = 'none';
+        btnCopyRaw.style.display = 'none';
+        btnOpenTab.style.display = 'none';
+        btnSaveDecoded.style.display = 'none';
+        currentDecodedBlob = null;
+        return;
+      }
+
+      try {
+        let b64 = rawInput;
+        let mime = null;
+
+        // Check if input is a Data URI: data:[mime];base64,[data]
+        const dataUriMatch = rawInput.match(/^data:([^;,]+)?(?:;charset=[^;,]+)?;base64,(.*)$/is);
+        if (dataUriMatch) {
+          mime = dataUriMatch[1] || 'application/octet-stream';
+          b64 = dataUriMatch[2].trim();
+
+          // Display Input Details
+          inputFileCard.style.display = 'flex';
+          inputCardTitleIcon.innerHTML = '<i data-lucide="link"></i>';
+          inputCardTitleText.textContent = 'Data URI Input';
+          inputTypePill.textContent = 'Data URI';
+          inputMetaName.textContent = 'Inline Data URI';
+          inputMetaMime.textContent = mime;
+          inputMetaSize.textContent = `${formatBytes(Math.round(b64.length * 0.75))} (est.)`;
+          inputMetaModItem.style.display = 'none';
+
+          if (mime.startsWith('image/')) {
+            inputPreviewBox.style.display = 'flex';
+            inputPreviewImg.src = rawInput;
+            inputPreviewImg.onload = () => {
+              inputDimensionsBadge.textContent = `${inputPreviewImg.naturalWidth} × ${inputPreviewImg.naturalHeight} px`;
+            };
+          } else {
+            inputPreviewBox.style.display = 'none';
+          }
+        } else {
+          inputFileCard.style.display = 'none';
+        }
+
+        // Decode Base64 bytes
+        const bytes = base64ToUint8Array(b64);
+        if (!mime) {
+          mime = detectMimeTypeFromBytes(bytes);
+        }
+
+        const isImage = mime.startsWith('image/');
+        const isText = mime.startsWith('text/') || mime === 'application/json' || mime === 'application/xml';
+
+        // Prepare decoded blob
+        currentDecodedBlob = new Blob([bytes], { type: mime });
+        currentDecodedFileName = `decoded.${getExtensionFromMime(mime)}`;
+
+        // Render decoded text if UTF-8 compatible
+        let decodedTextValue = '';
+        let isUtf8Decoded = false;
+        try {
+          decodedTextValue = uint8ArrayToUtf8(bytes);
+          isUtf8Decoded = true;
+          outputText.value = decodedTextValue;
+        } catch (utfErr) {
+          outputText.value = `[Binary Content: ${mime} (${formatBytes(bytes.length)})]\nClick "Download File" or the download button to save the file.`;
+        }
+
+        outputStats.textContent = isUtf8Decoded ? `${decodedTextValue.length.toLocaleString()} characters` : `${formatBytes(bytes.length)} binary`;
+        outputStatus.textContent = 'Decoded';
+
+        // Output File Details Card
+        outputFileCard.style.display = 'flex';
+        outputCardTitleIcon.innerHTML = isImage ? '<i data-lucide="image"></i>' : '<i data-lucide="package"></i>';
+        outputCardTitleText.textContent = isImage ? 'Decoded Image Details' : 'Decoded File Details';
+        outputFormatPill.textContent = isImage ? 'Image' : (isUtf8Decoded ? 'Plain Text' : 'Binary File');
+        outputMetaFormat.textContent = isUtf8Decoded ? 'UTF-8 Text' : 'Binary Stream';
+        outputMetaMime.textContent = mime;
+        outputMetaLength.textContent = `${bytes.length.toLocaleString()} bytes`;
+        outputMetaSize.textContent = formatBytes(bytes.length);
+
+        btnSaveDecoded.style.display = 'inline-flex';
+        btnCopyRaw.style.display = 'none';
+
+        // If Image, display live output preview
+        if (isImage) {
+          const imgDataUrl = `data:${mime};base64,${b64}`;
+          outputPreviewBox.style.display = 'flex';
+          outputPreviewImg.src = imgDataUrl;
+          outputPreviewImg.onload = () => {
+            outputDimensionsBadge.textContent = `${outputPreviewImg.naturalWidth} × ${outputPreviewImg.naturalHeight} px`;
+          };
+          btnOpenTab.style.display = 'inline-flex';
+          btnOpenTab.onclick = () => {
+            const w = window.open('');
+            w.document.write(`<title>Image Preview - ${mime}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${imgDataUrl}" style="max-width:95vw;max-height:95vh;object-fit:contain;"/></body>`);
+          };
+        } else {
+          outputPreviewBox.style.display = 'none';
+          btnOpenTab.style.display = 'none';
+        }
+
+      } catch (err) {
+        outputText.value = '';
+        outputStats.textContent = '0 characters';
+        outputStatus.textContent = 'Error: Invalid Base64 (' + err.message + ')';
+        outputFileCard.style.display = 'none';
+        btnCopyRaw.style.display = 'none';
+        btnOpenTab.style.display = 'none';
+        btnSaveDecoded.style.display = 'none';
+        currentDecodedBlob = null;
+      }
+    }
+
+    // Helper: file extension lookup
+    function getExtensionFromMime(mime) {
+      const map = {
+        'image/png': 'png',
+        'image/jpeg': 'jpg',
+        'image/gif': 'gif',
+        'image/webp': 'webp',
+        'image/svg+xml': 'svg',
+        'image/bmp': 'bmp',
+        'image/x-icon': 'ico',
+        'application/pdf': 'pdf',
+        'application/zip': 'zip',
+        'application/json': 'json',
+        'text/plain': 'txt',
+        'text/html': 'html',
+        'text/css': 'css',
+        'text/javascript': 'js'
+      };
+      return map[mime] || 'bin';
+    }
+
+    // Mode Switcher
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'encode') {
+        modeEncode.classList.add('btn-primary');
+        modeDecode.classList.remove('btn-primary');
+        inputLabel.textContent = 'Input Plain Text or File';
+        outputLabel.textContent = 'Output Base64 / Data URI';
+        optDataUriWrapper.style.display = 'flex';
+      } else {
+        modeDecode.classList.add('btn-primary');
+        modeEncode.classList.remove('btn-primary');
+        inputLabel.textContent = 'Input Base64 or Data URI';
+        outputLabel.textContent = 'Output Decoded Result';
+        optDataUriWrapper.style.display = 'none';
+      }
+      clearFileState();
+      process();
+    }
+
+    // Clear file state
+    function clearFileState() {
+      currentUploadedFile = null;
+      currentRawBase64 = '';
+      currentDataUri = '';
+      currentDecodedBlob = null;
+      inputFileCard.style.display = 'none';
+      inputPreviewBox.style.display = 'none';
+      inputPreviewImg.src = '';
+      outputPreviewBox.style.display = 'none';
+      outputPreviewImg.src = '';
+      btnOpenTab.style.display = 'none';
+      btnCopyRaw.style.display = 'none';
+      btnSaveDecoded.style.display = 'none';
+      document.getElementById('input-file-indicator').textContent = 'Drop files here';
+    }
+
+    // Handle File Upload / Drop
+    function handleFile(file) {
+      if (!file) return;
+      currentUploadedFile = file;
+
+      // Update Input Details Card
+      inputFileCard.style.display = 'flex';
+      inputCardTitleIcon.innerHTML = '<i data-lucide="file-text"></i>';
+      inputCardTitleText.textContent = 'Input File Details';
+      inputTypePill.textContent = 'Uploaded File';
+      inputMetaName.textContent = file.name;
+      inputMetaMime.textContent = file.type || 'application/octet-stream';
+      inputMetaSize.textContent = `${formatBytes(file.size)} (${file.size.toLocaleString()} bytes)`;
+      inputMetaModItem.style.display = 'flex';
+      inputMetaModified.textContent = new Date(file.lastModified).toLocaleString();
+      document.getElementById('input-file-indicator').textContent = `Loaded: ${file.name}`;
+
+      const reader = new FileReader();
+
+      if (currentMode === 'encode') {
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          currentDataUri = dataUrl;
+          const commaIndex = dataUrl.indexOf(',');
+          let rawB64 = commaIndex >= 0 ? dataUrl.substring(commaIndex + 1) : dataUrl;
+
+          if (optUrlSafe.checked) {
+            rawB64 = rawB64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          }
+          currentRawBase64 = rawB64;
+
+          // Populate output
+          if (optDataUri.checked) {
+            outputText.value = dataUrl;
+            btnCopyRaw.style.display = 'inline-flex';
+          } else {
+            outputText.value = rawB64;
+            btnCopyRaw.style.display = 'none';
+          }
+
+          inputText.value = `[File: ${file.name}]\nMIME: ${file.type || 'application/octet-stream'}\nSize: ${formatBytes(file.size)} (${file.size} bytes)`;
+          inputStats.textContent = `${formatBytes(file.size)}`;
+          outputStats.textContent = `${outputText.value.length.toLocaleString()} characters`;
+          outputStatus.textContent = 'Encoded (File)';
+
+          // Update Output Details Card
+          outputFileCard.style.display = 'flex';
+          outputCardTitleIcon.innerHTML = '<i data-lucide="package"></i>';
+          outputCardTitleText.textContent = 'Encoded File Details';
+          outputFormatPill.textContent = optDataUri.checked ? 'Data URI' : 'Raw Base64';
+          outputMetaFormat.textContent = optDataUri.checked ? 'RFC 2397 Data URI' : 'Standard Base64';
+          outputMetaMime.textContent = file.type || 'application/octet-stream';
+          outputMetaLength.textContent = `${outputText.value.length.toLocaleString()} chars`;
+          outputMetaSize.textContent = `${formatBytes(file.size)} original`;
+
+          // Handle Image Previews
+          if (file.type.startsWith('image/')) {
+            inputPreviewBox.style.display = 'flex';
+            inputPreviewImg.src = dataUrl;
+            inputPreviewImg.onload = () => {
+              inputDimensionsBadge.textContent = `${inputPreviewImg.naturalWidth} × ${inputPreviewImg.naturalHeight} px`;
+            };
+
+            outputPreviewBox.style.display = 'flex';
+            outputPreviewImg.src = dataUrl;
+            outputPreviewImg.onload = () => {
+              outputDimensionsBadge.textContent = `${outputPreviewImg.naturalWidth} × ${outputPreviewImg.naturalHeight} px`;
+            };
+
+            btnOpenTab.style.display = 'inline-flex';
+            btnOpenTab.onclick = () => {
+              const w = window.open('');
+              w.document.write(`<title>${file.name}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;height:100vh;"><img src="${dataUrl}" style="max-width:95vw;max-height:95vh;object-fit:contain;"/></body>`);
+            };
+          } else {
+            inputPreviewBox.style.display = 'none';
+            outputPreviewBox.style.display = 'none';
+            btnOpenTab.style.display = 'none';
+          }
+          refreshIcons();
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // In decode mode: read file as text (e.g. user uploads a .b64 or .txt file)
+        reader.onload = function(e) {
+          inputText.value = e.target.result;
+          processDecode();
+          refreshIcons();
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    // Event Listeners
+    modeEncode.addEventListener('click', () => setMode('encode'));
+    modeDecode.addEventListener('click', () => setMode('decode'));
+
+    inputText.addEventListener('input', () => {
+      currentUploadedFile = null;
+      inputFileCard.style.display = 'none';
+      inputPreviewBox.style.display = 'none';
+      document.getElementById('input-file-indicator').textContent = 'Drop files here';
+      if (optLive.checked) process();
+    });
+
+    optUrlSafe.addEventListener('change', () => {
+      if (currentUploadedFile) {
+        handleFile(currentUploadedFile);
+      } else {
+        process();
+      }
+    });
+
+    optDataUri.addEventListener('change', () => {
+      if (currentMode === 'encode') {
+        if (currentUploadedFile) {
+          if (optDataUri.checked) {
+            outputText.value = currentDataUri;
+            btnCopyRaw.style.display = 'inline-flex';
+            btnOpenTab.style.display = currentUploadedFile.type.startsWith('image/') ? 'inline-flex' : 'none';
+          } else {
+            outputText.value = currentRawBase64;
+            btnCopyRaw.style.display = 'none';
+            btnOpenTab.style.display = 'none';
+          }
+          outputFormatPill.textContent = optDataUri.checked ? 'Data URI' : 'Raw Base64';
+          outputMetaFormat.textContent = optDataUri.checked ? 'RFC 2397 Data URI' : 'Standard Base64';
+          outputStats.textContent = `${outputText.value.length.toLocaleString()} characters`;
+          refreshIcons();
+        } else {
+          processEncode();
+        }
+      }
+    });
+
+    // File Input trigger
+    const fileInput = document.getElementById('file-input');
+    document.getElementById('btn-upload-file').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    // Remove File button
+    btnRemoveFile.addEventListener('click', () => {
+      clearFileState();
+      inputText.value = '';
+      outputText.value = '';
+      inputStats.textContent = '0 characters';
+      outputStats.textContent = '0 characters';
+      outputStatus.textContent = 'Ready';
+      outputFileCard.style.display = 'none';
+    });
+
+    // Drag and Drop support
+    const inputPanel = document.getElementById('input-panel');
+    ['dragenter', 'dragover'].forEach(eventName => {
+      inputPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputPanel.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      inputPanel.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        inputPanel.classList.remove('dragover');
+      });
+    });
+
+    inputPanel.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        handleFile(dt.files[0]);
+      }
+    });
+
+    // Copy Buttons
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      if (!outputText.value) {
+        showToast('Nothing to copy', 'Output is currently empty.');
+        return;
+      }
+      const label = optDataUri.checked && currentMode === 'encode' ? 'Data URI' : 'Output';
+      copyToClipboard(outputText.value, label);
+    });
+
+    btnCopyRaw.addEventListener('click', () => {
+      if (currentRawBase64) {
+        copyToClipboard(currentRawBase64, 'Raw Base64');
+      } else {
+        copyToClipboard(outputText.value, 'Base64');
+      }
+    });
+
+    // Download Button
+    document.getElementById('btn-download').addEventListener('click', () => {
+      if (currentDecodedBlob && currentMode === 'decode') {
+        const url = URL.createObjectURL(currentDecodedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentDecodedFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Downloaded', `Saved ${currentDecodedFileName}`);
+        return;
+      }
+
+      if (!outputText.value) {
+        showToast('Nothing to save', 'Output is currently empty.');
+        return;
+      }
+
+      const filename = currentMode === 'encode' ? 'base64-encoded.txt' : 'decoded-output.txt';
+      downloadTextFile(filename, outputText.value);
+    });
+
+    // Save Decoded File button in output details card
+    btnSaveDecoded.addEventListener('click', () => {
+      if (currentDecodedBlob) {
+        const url = URL.createObjectURL(currentDecodedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentDecodedFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Downloaded', `Saved ${currentDecodedFileName}`);
+      }
+    });
+
+    // Clear Button
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      clearFileState();
+      outputFileCard.style.display = 'none';
+      inputStats.textContent = '0 characters';
+      outputStats.textContent = '0 characters';
+      outputStatus.textContent = 'Ready';
+      inputText.focus();
+    });
+
+    // Swap Button
+    document.getElementById('btn-swap').addEventListener('click', () => {
+      const temp = outputText.value;
+      if (!temp) return;
+      inputText.value = temp;
+      setMode(currentMode === 'encode' ? 'decode' : 'encode');
+    });
+
+    // Initial setup
+    setMode('encode');
+    document.addEventListener('DOMContentLoaded', refreshIcons);
+  </script>
+</body>
+</html>

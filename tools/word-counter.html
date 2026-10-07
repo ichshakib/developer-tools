@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Word & Character Counter - DevTools</title>
+  <meta name="description" content="Live word counter, character counter, sentence counter, paragraph counter, reading time estimator, and keyword density analyzer.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    .counter-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 1.85rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .stat-title {
+      font-size: 0.725rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Word & Character Counter</h1>
+          <span class="tool-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">Text</span>
+        </div>
+        <p class="tool-page-desc">Real-time text analytics for writers, bloggers, and developers. Count words, characters, sentences, paragraphs, and check reading & speaking time.</p>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="counter-stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-words">0</div>
+          <div class="stat-title">Words</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-chars">0</div>
+          <div class="stat-title">Characters</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-chars-nospace">0</div>
+          <div class="stat-title">Without Spaces</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-sentences">0</div>
+          <div class="stat-title">Sentences</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-paragraphs">0</div>
+          <div class="stat-title">Paragraphs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-read-time">0m</div>
+          <div class="stat-title">Reading Time</div>
+        </div>
+      </div>
+
+      <!-- Actions & Transformations -->
+      <div class="tool-options-bar" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-right: 0.25rem;">Transform:</span>
+        <button id="btn-upper" class="btn-sm">UPPERCASE</button>
+        <button id="btn-lower" class="btn-sm">lowercase</button>
+        <button id="btn-title" class="btn-sm">Title Case</button>
+        <button id="btn-sentence" class="btn-sm">Sentence case</button>
+        <button id="btn-copy" class="btn-sm btn-primary" style="margin-left: auto;"><i data-lucide="copy"></i> Copy Text</button>
+        <button id="btn-clear" class="btn-sm"><i data-lucide="trash-2"></i> Clear</button>
+      </div>
+
+      <!-- Main Input -->
+      <div class="tool-panel">
+        <textarea id="text-input" class="tool-textarea" placeholder="Paste or start typing your content here..." style="height: 320px; font-size: 0.95rem; line-height: 1.6;"></textarea>
+      </div>
+
+      <!-- Keyword Density -->
+      <div class="tool-panel" style="margin-top: 1.25rem;">
+        <div class="panel-header">
+          <span class="panel-title"><i data-lucide="bar-chart-2"></i> Top Keywords Density</span>
+        </div>
+        <div id="keyword-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.6rem; margin-top: 0.5rem;">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Type text above to see keyword frequencies.</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+  <script>
+    const textInput = document.getElementById('text-input');
+    const statWords = document.getElementById('stat-words');
+    const statChars = document.getElementById('stat-chars');
+    const statCharsNoSpace = document.getElementById('stat-chars-nospace');
+    const statSentences = document.getElementById('stat-sentences');
+    const statParagraphs = document.getElementById('stat-paragraphs');
+    const statReadTime = document.getElementById('stat-read-time');
+    const keywordList = document.getElementById('keyword-list');
+
+    function analyze() {
+      const text = textInput.value;
+      const trimmed = text.trim();
+
+      // Words
+      const words = trimmed ? trimmed.split(/\s+/).filter(w => w.length > 0) : [];
+      statWords.textContent = words.length.toLocaleString();
+
+      // Chars
+      statChars.textContent = text.length.toLocaleString();
+      statCharsNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
+
+      // Sentences
+      const sentences = trimmed ? trimmed.split(/[.!?]+/).filter(s => s.trim().length > 0) : [];
+      statSentences.textContent = sentences.length.toLocaleString();
+
+      // Paragraphs
+      const paras = trimmed ? trimmed.split(/\n+/).filter(p => p.trim().length > 0) : [];
+      statParagraphs.textContent = paras.length.toLocaleString();
+
+      // Reading Time (~225 wpm)
+      const minutes = Math.ceil(words.length / 225);
+      statReadTime.textContent = words.length ? `${minutes}m` : '0m';
+
+      // Keywords
+      updateKeywords(words);
+    }
+
+    function updateKeywords(words) {
+      if (!words || words.length === 0) {
+        keywordList.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Type text above to see keyword frequencies.</span>';
+        return;
+      }
+
+      const stopWords = new Set(['the','and','to','of','a','in','is','it','you','that','he','was','for','on','are','as','with','his','they','i','at','be','this','have','from']);
+      const freq = {};
+      words.forEach(w => {
+        const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (clean.length > 2 && !stopWords.has(clean)) {
+          freq[clean] = (freq[clean] || 0) + 1;
+        }
+      });
+
+      const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      if (sorted.length === 0) {
+        keywordList.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">No recurring keywords found yet.</span>';
+        return;
+      }
+
+      keywordList.innerHTML = sorted.map(([word, count]) => {
+        const pct = ((count / words.length) * 100).toFixed(1);
+        return `<div style="background: var(--bg-primary); padding: 0.4rem 0.6rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; justify-content: space-between;">
+          <strong style="color: var(--text-primary);">${word}</strong>
+          <span style="color: var(--text-secondary); font-family: var(--font-mono);">${count} (${pct}%)</span>
+        </div>`;
+      }).join('');
+    }
+
+    textInput.addEventListener('input', analyze);
+
+    // Case conversions
+    document.getElementById('btn-upper').addEventListener('click', () => { textInput.value = textInput.value.toUpperCase(); analyze(); });
+    document.getElementById('btn-lower').addEventListener('click', () => { textInput.value = textInput.value.toLowerCase(); analyze(); });
+    document.getElementById('btn-title').addEventListener('click', () => {
+      textInput.value = textInput.value.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+      analyze();
+    });
+    document.getElementById('btn-sentence').addEventListener('click', () => {
+      textInput.value = textInput.value.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
+      analyze();
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => copyToClipboard(textInput.value, 'Text'));
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      textInput.value = '';
+      analyze();
+      textInput.focus();
+    });
+
+    // Initial run
+    analyze();
+  </script>
+</body>
+</html>

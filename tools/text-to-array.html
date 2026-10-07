@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Text to Array Converter - DevTools</title>
+  <meta name="description" content="Convert plain lines, lists, and delimited text into JavaScript, Python, PHP, SQL, JSON, and custom code arrays.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Text to Array Converter</h1>
+          <span class="tool-badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3);">Converters</span>
+        </div>
+        <p class="tool-page-desc">Quickly transform raw text lines, CSV entries, and lists into formatted arrays for JavaScript, Python, PHP, SQL IN clauses, and JSON.</p>
+      </div>
+
+      <!-- Controls -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary);">Language:</label>
+          <select id="lang-select" style="padding: 0.35rem 0.6rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+            <option value="js-double">JavaScript / JSON ["a", "b"]</option>
+            <option value="js-single">JavaScript / Python ['a', 'b']</option>
+            <option value="php">PHP array("a", "b")</option>
+            <option value="sql">SQL IN ('a', 'b')</option>
+            <option value="csv">Comma Separated a, b, c</option>
+            <option value="custom">Custom Format</option>
+          </select>
+        </div>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-trim" checked>
+          <span>Trim whitespace</span>
+        </label>
+        <label class="option-group">
+          <input type="checkbox" id="opt-no-empty" checked>
+          <span>Remove empty lines</span>
+        </label>
+        <label class="option-group">
+          <input type="checkbox" id="opt-unique">
+          <span>Remove duplicates</span>
+        </label>
+        <label class="option-group">
+          <input type="checkbox" id="opt-sort">
+          <span>Sort A-Z</span>
+        </label>
+      </div>
+
+      <!-- Workspace -->
+      <div class="tool-workspace">
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title"><i data-lucide="align-left"></i> Raw Input Lines</span>
+            <div style="display: flex; gap: 0.4rem;">
+              <button id="btn-clear" class="btn-sm"><i data-lucide="trash-2"></i> Clear</button>
+            </div>
+          </div>
+          <textarea id="input-text" class="tool-textarea" placeholder="Paste items here (one per line, or separated by commas)..." style="height: 380px;"></textarea>
+          <div class="panel-footer" style="margin-top: 0.5rem;">
+            <span id="input-count">0 items detected</span>
+          </div>
+        </div>
+
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title"><i data-lucide="code-2"></i> Formatted Array Output</span>
+            <div style="display: flex; gap: 0.4rem;">
+              <button id="btn-copy" class="btn-sm btn-primary"><i data-lucide="copy"></i> Copy</button>
+              <button id="btn-download" class="btn-sm"><i data-lucide="download"></i> Download</button>
+            </div>
+          </div>
+          <textarea id="output-text" class="tool-textarea" readonly placeholder="Output array will appear here..." style="height: 380px;"></textarea>
+          <div class="panel-footer" style="margin-top: 0.5rem;">
+            <span id="output-stats">0 characters</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+  <script>
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const langSelect = document.getElementById('lang-select');
+    const optTrim = document.getElementById('opt-trim');
+    const optNoEmpty = document.getElementById('opt-no-empty');
+    const optUnique = document.getElementById('opt-unique');
+    const optSort = document.getElementById('opt-sort');
+    const inputCount = document.getElementById('input-count');
+    const outputStats = document.getElementById('output-stats');
+
+    function convert() {
+      let raw = inputText.value;
+      if (!raw.trim()) {
+        outputText.value = '';
+        inputCount.textContent = '0 items detected';
+        outputStats.textContent = '0 characters';
+        return;
+      }
+
+      // Split by newline or comma if single line
+      let items = raw.includes('\n') ? raw.split(/\r?\n/) : raw.split(',');
+
+      if (optTrim.checked) {
+        items = items.map(s => s.trim());
+      }
+      if (optNoEmpty.checked) {
+        items = items.filter(s => s.length > 0);
+      }
+      if (optUnique.checked) {
+        items = Array.from(new Set(items));
+      }
+      if (optSort.checked) {
+        items.sort((a, b) => a.localeCompare(b));
+      }
+
+      inputCount.textContent = `${items.length} item${items.length === 1 ? '' : 's'} detected`;
+
+      const mode = langSelect.value;
+      let result = '';
+
+      if (mode === 'js-double') {
+        result = JSON.stringify(items, null, 2);
+      } else if (mode === 'js-single') {
+        result = "[\n  " + items.map(i => `'${i.replace(/'/g, "\\'")}'`).join(',\n  ') + "\n]";
+      } else if (mode === 'php') {
+        result = "array(\n  " + items.map(i => `"${i.replace(/"/g, '\\"')}"`).join(',\n  ') + "\n);";
+      } else if (mode === 'sql') {
+        result = "IN (" + items.map(i => `'${i.replace(/'/g, "''")}'`).join(', ') + ")";
+      } else if (mode === 'csv') {
+        result = items.join(', ');
+      } else {
+        result = items.map(i => `"${i}"`).join(', ');
+      }
+
+      outputText.value = result;
+      outputStats.textContent = `${result.length.toLocaleString()} characters`;
+    }
+
+    [inputText, langSelect, optTrim, optNoEmpty, optUnique, optSort].forEach(el => {
+      el.addEventListener('input', convert);
+      el.addEventListener('change', convert);
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      convert();
+      inputText.focus();
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => copyToClipboard(outputText.value, 'Array output'));
+    document.getElementById('btn-download').addEventListener('click', () => downloadTextFile('array-output.txt', outputText.value));
+
+    // Initial run
+    convert();
+  </script>
+</body>
+</html>

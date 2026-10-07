@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CSV Viewer & Editor - DevTools</title>
+  <meta name="description" content="Fast, private client-side CSV viewer and spreadsheet editor. Edit cells, add rows/columns, filter, and export to CSV or JSON.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    .csv-table-wrapper {
+      max-height: 480px;
+      overflow: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-top: 1rem;
+      background: var(--bg-primary);
+    }
+    .csv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+    .csv-table th, .csv-table td {
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.65rem;
+      min-width: 100px;
+    }
+    .csv-table th {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      font-weight: 600;
+    }
+    .csv-table td:focus {
+      outline: 2px solid var(--accent-color);
+      background: rgba(59, 130, 246, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">CSV Viewer & Editor</h1>
+          <span class="tool-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);">Data</span>
+        </div>
+        <p class="tool-page-desc">Open, view, edit, and export CSV and TSV spreadsheets directly in your browser. Add or remove rows and columns, search data, and convert to JSON.</p>
+      </div>
+
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+        <input type="file" id="file-input" accept=".csv,.tsv,.txt" style="display: none;">
+        <button id="btn-upload" class="btn-sm"><i data-lucide="upload"></i> Open CSV</button>
+        <button id="btn-add-row" class="btn-sm"><i data-lucide="plus"></i> Add Row</button>
+        <button id="btn-add-col" class="btn-sm"><i data-lucide="plus-circle"></i> Add Column</button>
+        <input type="text" id="search-input" placeholder="Search table..." style="padding: 0.35rem 0.6rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.8rem; width: 160px;">
+        <button id="btn-export-csv" class="btn-sm btn-primary" style="margin-left: auto;"><i data-lucide="download"></i> Download CSV</button>
+        <button id="btn-export-json" class="btn-sm"><i data-lucide="file-json"></i> Export JSON</button>
+      </div>
+
+      <div class="tool-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span id="csv-stats" style="font-size: 0.8rem; color: var(--text-secondary);">0 rows | 0 columns</span>
+          <span style="font-size: 0.725rem; color: var(--text-muted);">Tip: Click any cell to edit directly</span>
+        </div>
+        <div class="csv-table-wrapper">
+          <table class="csv-table" id="csv-table"></table>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+  <script>
+    let tableData = [];
+
+    const tableEl = document.getElementById('csv-table');
+    const statsEl = document.getElementById('csv-stats');
+    const searchInput = document.getElementById('search-input');
+
+    function renderTable() {
+      if (!tableData || tableData.length === 0) {
+        tableEl.innerHTML = '<tbody><tr><td style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">No CSV data loaded. Click "Upload CSV" or "Add Row" to start editing.</td></tr></tbody>';
+        statsEl.textContent = '0 rows | 0 columns';
+        return;
+      }
+
+      const q = searchInput.value.toLowerCase().trim();
+      let html = '<thead><tr><th>#</th>';
+      tableData[0].forEach((col, idx) => {
+        html += `<th contenteditable="true" data-row="0" data-col="${idx}">${col}</th>`;
+      });
+      html += '<th>Action</th></tr></thead><tbody>';
+
+      for (let r = 1; r < tableData.length; r++) {
+        const row = tableData[r];
+        if (q && !row.some(cell => String(cell).toLowerCase().includes(q))) continue;
+
+        html += `<tr><td style="color:var(--text-muted);">${r}</td>`;
+        row.forEach((cell, c) => {
+          html += `<td contenteditable="true" data-row="${r}" data-col="${c}">${cell}</td>`;
+        });
+        html += `<td><button class="btn-sm btn-del-row" data-row="${r}" style="padding:0.15rem 0.4rem;font-size:0.7rem;color:#ef4444;">&times;</button></td></tr>`;
+      }
+      html += '</tbody>';
+      tableEl.innerHTML = html;
+
+      statsEl.textContent = `${tableData.length - 1} data rows | ${tableData[0].length} columns`;
+
+      tableEl.querySelectorAll('[contenteditable]').forEach(cell => {
+        cell.addEventListener('input', (e) => {
+          const r = parseInt(e.target.dataset.row, 10);
+          const c = parseInt(e.target.dataset.col, 10);
+          tableData[r][c] = e.target.textContent;
+        });
+      });
+
+      tableEl.querySelectorAll('.btn-del-row').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const r = parseInt(e.target.dataset.row, 10);
+          tableData.splice(r, 1);
+          renderTable();
+        });
+      });
+    }
+
+    searchInput.addEventListener('input', renderTable);
+
+    document.getElementById('btn-add-row').addEventListener('click', () => {
+      if (tableData.length === 0) {
+        tableData = [["Column 1", "Column 2", "Column 3"], ["", "", ""]];
+      } else {
+        const newRow = new Array(tableData[0].length).fill('');
+        tableData.push(newRow);
+      }
+      renderTable();
+    });
+
+    document.getElementById('btn-add-col').addEventListener('click', () => {
+      if (tableData.length === 0) {
+        tableData = [["Column 1"], [""]];
+        renderTable();
+        return;
+      }
+      const name = prompt('Column Name:', `Column_${tableData[0].length + 1}`);
+      if (!name) return;
+      tableData[0].push(name);
+      for (let r = 1; r < tableData.length; r++) tableData[r].push('');
+      renderTable();
+    });
+
+    const fileInput = document.getElementById('file-input');
+    document.getElementById('btn-upload').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        parseCsv(reader.result);
+      };
+      reader.readAsText(file);
+    });
+
+    function parseCsv(text) {
+      const lines = text.trim().split(/\r?\n/).filter(l => l.length > 0);
+      tableData = lines.map(line => {
+        return line.split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
+      });
+      renderTable();
+    }
+
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      const csvStr = tableData.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      downloadTextFile('export.csv', csvStr, 'text/csv');
+    });
+
+    document.getElementById('btn-export-json').addEventListener('click', () => {
+      const headers = tableData[0];
+      const jsonArr = [];
+      for (let r = 1; r < tableData.length; r++) {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = tableData[r][i] || '');
+        jsonArr.push(obj);
+      }
+      downloadTextFile('export.json', JSON.stringify(jsonArr, null, 2), 'application/json');
+    });
+
+    renderTable();
+  </script>
+</body>
+</html>
