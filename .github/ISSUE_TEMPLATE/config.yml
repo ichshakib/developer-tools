@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Contributing Guide
+    url: https://github.com/ichshakib/dev-tools/blob/main/CONTRIBUTING.md
+    about: Read our core principles, architecture overview, and the 5-step checklist for adding a new tool.
+  - name: 🌐 Live Web App
+    url: https://ichshakib.github.io/dev-tools/
+    about: Try and test all developer utilities instantly in your browser with zero installation.
+  - name: 💬 General Questions & Discussions
+    url: https://github.com/ichshakib/dev-tools/discussions
+    about: Ask questions, share ideas, or get feedback before opening an issue or submitting a PR.

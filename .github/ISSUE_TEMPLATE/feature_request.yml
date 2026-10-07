@@ -1,0 +1,67 @@
+name: 💡 Feature or Improvement Request
+description: Suggest an enhancement or improvement for an existing tool or the DevTools platform.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Suggest an Improvement or Feature
+        Thank you for helping improve **DevTools**!
+        If you want to propose an entirely **new tool**, please use the [New Tool Proposal](https://github.com/ichshakib/dev-tools/issues/new?template=new_tool.yml) template instead.
+
+  - type: input
+    id: affected-area
+    attributes:
+      label: Target Tool or Area
+      description: Which existing tool, UI component, or feature is this enhancement for?
+      placeholder: "e.g., JSON Formatter, Base64 Encoder, Keyboard Shortcuts, Dark Mode contrast, Mobile Navigation"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem or Motivation
+      description: Is this improvement related to a problem or limitation?
+      placeholder: A clear and concise description of the issue or current limitation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution or Improvement
+      description: A clear description of what you want to happen and how it should look or function.
+      placeholder: Describe the desired behavior, new option, or UI enhancement in detail.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions, features, or workarounds you have considered.
+      placeholder: Describe any alternative approaches.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or screenshots about the feature request here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing [GitHub Issues](https://github.com/ichshakib/dev-tools/issues) to make sure this is not a duplicate.
+          required: true
+        - label: This suggestion complies with DevTools' local-first, zero-runtime-dependency philosophy.
+          required: true
+        - label: I am willing to contribute code for this feature if needed.
+          required: false

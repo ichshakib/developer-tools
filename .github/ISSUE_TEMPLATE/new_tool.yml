@@ -1,0 +1,100 @@
+name: 🛠️ New Tool Proposal
+description: Propose a new client-side developer utility to be added to DevTools.
+title: "[New Tool]: "
+labels: ["enhancement", "new-tool"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Propose a New Developer Utility
+        Thank you for suggesting a new tool for **DevTools**!
+        
+        Before submitting, please review our core principles in [CONTRIBUTING.md](https://github.com/ichshakib/dev-tools/blob/main/CONTRIBUTING.md):
+        - **100% Client-Side**: No user data leaves the browser; zero telemetry or remote APIs.
+        - **Zero Runtime Dependencies**: Built strictly with Vanilla HTML5, CSS, and modern JavaScript (ES6+).
+        - **Minimalist Aesthetic**: High-contrast, distraction-free monochrome design compatible with both Light & Dark modes.
+
+  - type: input
+    id: tool-name
+    attributes:
+      label: Tool Name
+      description: What is the proposed name for this tool?
+      placeholder: "e.g., SVG Path Visualizer, JWT Decoder, CSS Box Shadow Generator"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tool-category
+    attributes:
+      label: Target Category
+      description: Which category does this utility belong to?
+      options:
+        - Generators (Asset packs, favicons, slugs, meta tags, cron, etc.)
+        - Converters (Base64, units, colors, image format, etc.)
+        - SEO & Web (Robots.txt, sitemaps, open graph, headers, etc.)
+        - Formatters & Validators (JSON, YAML, SQL, XML, regex, etc.)
+        - New Category / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: tool-description
+    attributes:
+      label: Problem & Motivation
+      description: What developer pain point or daily engineering task does this tool solve?
+      placeholder: Describe why this tool is useful and when developers would need it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tool-features
+    attributes:
+      label: Proposed Functionality & UI Layout
+      description: Describe the input controls, options, actions, and output results.
+      placeholder: |
+        - Input: Textarea for raw string / file drop area / input fields
+        - Options: Checkboxes, dropdowns, or switches
+        - Output: Formatted preview, instant copy button, file download
+    validations:
+      required: true
+
+  - type: textarea
+    id: client-side-feasibility
+    attributes:
+      label: Client-Side Implementation Feasibility
+      description: How will this tool be implemented client-side without external servers or npm runtime packages?
+      placeholder: "e.g., Uses native Web Crypto API / Canvas API / native JSON parser / pure JavaScript algorithm."
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-usage
+    attributes:
+      label: Example Input and Expected Output
+      description: Provide sample inputs and what the corresponding output should look like.
+      placeholder: |
+        Sample Input: ...
+        Sample Output: ...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: implementation-willingness
+    attributes:
+      label: Willingness to Implement
+      description: Are you interested in contributing this tool yourself?
+      options:
+        - label: I would like to build and submit a Pull Request for this tool following the checklist in [CONTRIBUTING.md](https://github.com/ichshakib/dev-tools/blob/main/CONTRIBUTING.md).
+          required: false
+
+  - type: checkboxes
+    id: proposal-checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched [Existing Tools](https://ichshakib.github.io/dev-tools/) and open issues to confirm this tool is not already available or requested.
+          required: true
+        - label: I understand this tool must run entirely client-side with zero external backend services or telemetry.
+          required: true
+        - label: I have read the [Contributing Guidelines](https://github.com/ichshakib/dev-tools/blob/main/CONTRIBUTING.md).
+          required: true

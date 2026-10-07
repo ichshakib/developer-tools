@@ -1,0 +1,102 @@
+name: 🐛 Bug Report
+description: Report a bug, broken utility, UI glitch, or unexpected behavior in DevTools.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thank you for reporting an issue with DevTools!
+        Before creating a report, please verify that you are testing on the latest version or the [Live Web App](https://ichshakib.github.io/dev-tools/).
+        Remember: DevTools runs **100% client-side** in your browser with zero remote APIs or server logs.
+
+  - type: input
+    id: affected-tool
+    attributes:
+      label: Affected Tool or Component
+      description: Which tool, page, or component is experiencing the issue?
+      placeholder: "e.g., Base64 Converter, App Icon Generator, Cron Builder, Theme Toggle, Homepage Search"
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Provide an overview of the issue and what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Go to 'tools/...' or 'https://ichshakib.github.io/dev-tools/tools/...'
+        2. Enter input '...'
+        3. Click button '...'
+        4. Observe the error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: What should have happened under normal circumstances?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior & Console Errors
+      description: What happened instead? Please include any browser console errors (`F12` -> Console tab) or stack traces.
+      placeholder: Paste console errors or describe the unexpected output here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Screen Recordings
+      description: Drag and drop screenshots or paste images to help explain the problem.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: theme-mode
+    attributes:
+      label: Active Theme
+      description: Which theme mode was active when the bug occurred?
+      options:
+        - Dark Theme (Default)
+        - Light Theme
+        - Both / Theme Independent
+    validations:
+      required: true
+
+  - type: input
+    id: browser-os
+    attributes:
+      label: Browser & Operating System
+      description: What browser and OS are you using?
+      placeholder: "e.g., Chrome 124 on Windows 11 / Firefox 125 on macOS Sonoma / Safari on iOS 17"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: validations
+    attributes:
+      label: Checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I have searched existing [GitHub Issues](https://github.com/ichshakib/dev-tools/issues) to make sure this is not a duplicate.
+          required: true
+        - label: I have verified this bug reproduces on the [Live Web App](https://ichshakib.github.io/dev-tools/) or latest `main` branch.
+          required: true
+        - label: This report does NOT include any confidential, proprietary, or sensitive personal data.
+          required: true
