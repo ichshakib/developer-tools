@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Robots.txt Generator - DevTools</title>
+  <meta name="description" content="Generate search-engine compliant robots.txt files with custom user-agent rules, disallow paths, crawl delay, and sitemap directives.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+  <link rel="manifest" href="../favicon_io/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <script src="../components.js"></script>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link">&larr; Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Robots.txt Generator</h1>
+          <span class="tool-badge">SEO</span>
+        </div>
+        <p class="tool-page-desc">Build web crawler directives, disallow paths, crawl delay limits, and declare sitemap locations for search bots.</p>
+      </div>
+
+      <!-- Quick Preset Selector -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem;">
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Preset:</span>
+        <select id="robots-preset" class="tool-select">
+          <option value="standard">Standard Web App (Allow all with sitemap)</option>
+          <option value="disallow-admin">Disallow Admin, Private & API (/admin, /private, /api)</option>
+          <option value="block-all">Block all crawlers (Disallow: /)</option>
+          <option value="allow-all">Allow all (Clean Allow: /)</option>
+        </select>
+      </div>
+
+      <div class="tool-workspace">
+        <!-- Configuration Panel -->
+        <div class="tool-panel">
+          <span class="panel-title">Directives & Configuration</span>
+
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">User-agent:</label>
+            <select id="cfg-agent" class="tool-select" style="width: 100%;">
+              <option value="*">All Robots (*)</option>
+              <option value="Googlebot">Googlebot (Google)</option>
+              <option value="Bingbot">Bingbot (Bing)</option>
+              <option value="Baiduspider">Baiduspider (Baidu)</option>
+              <option value="YandexBot">YandexBot (Yandex)</option>
+              <option value="DuckDuckBot">DuckDuckBot (DuckDuckGo)</option>
+              <option value="Slurp">Yahoo Slurp</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Disallowed Paths (one per line):</label>
+            <textarea id="cfg-disallow" class="tool-textarea" style="min-height: 110px;" placeholder="/admin/&#10;/private/&#10;/api/"></textarea>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Allowed Paths (one per line, optional):</label>
+            <textarea id="cfg-allow" class="tool-textarea" style="min-height: 70px;" placeholder="/"></textarea>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Crawl-delay (seconds, optional):</label>
+            <input type="number" id="cfg-delay" class="tool-input" placeholder="e.g. 10 (or leave blank)" min="0">
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Sitemap URL (optional):</label>
+            <input type="url" id="cfg-sitemap" class="tool-input" placeholder="https://yourwebsite.com/sitemap.xml" value="">
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title">Generated robots.txt</span>
+            <div class="panel-actions">
+              <button id="btn-copy" class="btn-sm btn-primary">Copy</button>
+              <button id="btn-download" class="btn-sm">Download robots.txt</button>
+            </div>
+          </div>
+          <textarea id="output-text" class="tool-textarea" readonly spellcheck="false" style="min-height: 380px;"></textarea>
+          <div class="panel-footer">
+            <span id="output-stats">0 lines</span>
+            <span>Valid robots.txt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="common.js"></script>
+  <script>
+    const cfgAgent = document.getElementById('cfg-agent');
+    const cfgDisallow = document.getElementById('cfg-disallow');
+    const cfgAllow = document.getElementById('cfg-allow');
+    const cfgDelay = document.getElementById('cfg-delay');
+    const cfgSitemap = document.getElementById('cfg-sitemap');
+    const outputText = document.getElementById('output-text');
+    const outputStats = document.getElementById('output-stats');
+    const presetSelect = document.getElementById('robots-preset');
+
+    function generateRobots() {
+      const lines = ['# robots.txt generated by DevTools'];
+      lines.push(`User-agent: ${cfgAgent.value || '*'}`);
+
+      const allows = cfgAllow.value.split('\n').map(s => s.trim()).filter(Boolean);
+      allows.forEach(path => lines.push(`Allow: ${path}`));
+
+      const disallows = cfgDisallow.value.split('\n').map(s => s.trim()).filter(Boolean);
+      if (disallows.length === 0 && allows.length === 0) {
+        lines.push('Allow: /');
+      } else {
+        disallows.forEach(path => lines.push(`Disallow: ${path}`));
+      }
+
+      if (cfgDelay.value.trim()) {
+        lines.push(`Crawl-delay: ${cfgDelay.value.trim()}`);
+      }
+
+      if (cfgSitemap.value.trim()) {
+        lines.push('');
+        lines.push(`Sitemap: ${cfgSitemap.value.trim()}`);
+      }
+
+      const result = lines.join('\n');
+      outputText.value = result;
+      outputStats.textContent = `${lines.length} lines`;
+    }
+
+    presetSelect.addEventListener('change', (e) => {
+      const p = e.target.value;
+      if (p === 'standard') {
+        cfgAgent.value = '*';
+        cfgAllow.value = '/';
+        cfgDisallow.value = '';
+        cfgDelay.value = '';
+      } else if (p === 'disallow-admin') {
+        cfgAgent.value = '*';
+        cfgAllow.value = '/';
+        cfgDisallow.value = '/admin/\n/private/\n/api/';
+        cfgDelay.value = '';
+      } else if (p === 'block-all') {
+        cfgAgent.value = '*';
+        cfgAllow.value = '';
+        cfgDisallow.value = '/';
+        cfgDelay.value = '';
+      } else if (p === 'allow-all') {
+        cfgAgent.value = '*';
+        cfgAllow.value = '/';
+        cfgDisallow.value = '';
+        cfgDelay.value = '';
+      }
+      generateRobots();
+    });
+
+    [cfgAgent, cfgDisallow, cfgAllow, cfgDelay, cfgSitemap].forEach(el => {
+      el.addEventListener('input', generateRobots);
+      el.addEventListener('change', generateRobots);
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      copyToClipboard(outputText.value, 'robots.txt');
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+      downloadTextFile('robots.txt', outputText.value);
+    });
+
+    generateRobots();
+  </script>
+</body>
+</html>

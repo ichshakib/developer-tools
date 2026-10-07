@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Image & File Slug Generator - DevTools</title>
+  <meta name="description" content="Optimize image and file names for SEO. Upload images, inspect metadata, generate clean URL slugs, calculate real-time SEO scores, and download renamed files.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    /* Mode Switcher Tabs */
+    .mode-nav {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .mode-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .mode-tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-surface-hover);
+    }
+    .mode-tab.active {
+      color: var(--text-primary);
+      background: var(--bg-surface);
+      border-color: var(--border-color);
+      font-weight: 600;
+    }
+    .mode-tab svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Upload & File Details */
+    .dropzone-compact {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .dropzone-compact:hover, .dropzone-compact.dragover {
+      border-color: var(--border-focus);
+      background: var(--bg-surface-hover);
+    }
+    .dropzone-compact svg {
+      width: 32px;
+      height: 32px;
+      color: var(--text-muted);
+    }
+
+    .file-details-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-top: 0.5rem;
+    }
+    .file-info-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      overflow: hidden;
+    }
+    .file-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-primary);
+    }
+    .file-meta-text {
+      overflow: hidden;
+    }
+    .file-meta-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
+    }
+    .file-meta-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* SEO Score Gauge & Checklist */
+    .seo-score-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .seo-score-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .score-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .score-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      border: 3px solid currentColor;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+    .score-label-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    .score-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .score-grade {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .seo-tip-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      background: rgba(234, 88, 12, 0.1);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      color: #ea580c;
+    }
+    .seo-tip-banner.perfect {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: #10b981;
+    }
+    .seo-tip-banner.neutral {
+      background: var(--bg-surface);
+      border-color: var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    .seo-checklist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+    @media (max-width: 600px) {
+      .seo-checklist {
+        grid-template-columns: 1fr;
+      }
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      padding: 0.3rem 0.4rem;
+      border-radius: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+    .check-item.pass {
+      color: var(--text-primary);
+    }
+    .check-item.pass .check-icon {
+      color: #10b981;
+    }
+    .check-item.fail .check-icon {
+      color: #ef4444;
+    }
+    .check-item.idle .check-icon {
+      color: var(--text-muted);
+    }
+
+    /* Right Column: Image Preview Box */
+    .preview-canvas-box {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      background-image: 
+        linear-gradient(45deg, rgba(128,128,128,0.08) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(128,128,128,0.08) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(128,128,128,0.08) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(128,128,128,0.08) 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+      overflow: hidden;
+      position: relative;
+    }
+    .preview-canvas-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+    .preview-placeholder-text {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* Slug Result Box */
+    .slug-result-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .slug-display-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+    }
+    .slug-display-text {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      word-break: break-all;
+      outline: none;
+    }
+    .slug-display-text.placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .url-preview-box {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.65rem;
+      word-break: break-all;
+    }
+    .url-preview-box span.url-slug {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* SEO Tips Card */
+    .tips-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+    }
+    .tips-title {
+      font-size: 0.825rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .tips-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .tips-list li {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+    }
+    .tips-list li strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .tips-list li svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: #ea580c;
+    }
+
+    /* Score Colors */
+    .score-excellent { color: #10b981; }
+    .score-good { color: #f59e0b; }
+    .score-poor { color: #ef4444; }
+    .score-neutral { color: var(--text-muted); border-color: var(--border-color); }
+  </style>
+</head>
+<body>
+  <!-- Header Hydrated by components.js -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Image & File Slug Generator</h1>
+          <span class="tool-badge" style="background: rgba(234, 88, 12, 0.15); color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.3);">SEO Tool</span>
+        </div>
+        <p class="tool-page-desc">Upload images or files, optimize descriptive titles, inspect live SEO ranking scores, preview your image, and generate web-safe slugs with direct renamed file downloads.</p>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="mode-nav">
+        <button id="tab-single" class="mode-tab active" type="button">
+          <i data-lucide="image"></i> Single File & Live SEO Inspector
+        </button>
+        <button id="tab-batch" class="mode-tab" type="button">
+          <i data-lucide="list"></i> Batch List Mode (.bat Script)
+        </button>
+      </div>
+
+      <!-- ================= SINGLE FILE / IMAGE INSPECTOR MODE ================= -->
+      <div id="section-single">
+        <div class="tool-workspace">
+          <!-- LEFT COLUMN: Upload, Title & Controls, SEO Score -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Panel 1: File Upload & Details -->
+            <div class="tool-panel">
+              <div class="panel-header">
+                <span class="panel-title"><i data-lucide="upload-cloud"></i> Upload Image / File</span>
+                <div class="panel-actions">
+                  <button id="btn-single-clear" class="btn-sm"><i data-lucide="trash-2"></i> Clear</button>
+                </div>
+              </div>
+
+              <!-- Hidden File Input -->
+              <input type="file" id="single-file-input" style="display: none;" accept="image/*,.pdf,.zip,.svg,.webp,.png,.jpg,.jpeg,.gif,.avif">
+
+              <!-- Dropzone -->
+              <div id="single-dropzone" class="dropzone-compact">
+                <i data-lucide="image-plus"></i>
+                <div>
+                  <strong style="color: var(--text-primary); font-size: 0.85rem;">Click to upload</strong> or drag and drop your image or file
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                  PNG, JPG, WebP, SVG, AVIF, PDF, or any file (Max 50MB)
+                </div>
+              </div>
+
+              <!-- File Details Card (Visible only when file is uploaded) -->
+              <div id="file-details-card" class="file-details-card" style="display: none;">
+                <div class="file-info-group">
+                  <div class="file-icon-box" id="file-type-icon">
+                    <i data-lucide="file-image"></i>
+                  </div>
+                  <div class="file-meta-text">
+                    <div class="file-meta-name" id="meta-filename">—</div>
+                    <div class="file-meta-sub">
+                      <span id="meta-filesize">0 KB</span>
+                      <span>•</span>
+                      <span id="meta-mimetype">—</span>
+                      <span id="meta-dim-wrap" style="display: none;">• <span id="meta-dimensions">—</span></span>
+                    </div>
+                  </div>
+                </div>
+                <button id="btn-change-file" class="btn-sm" title="Select another file"><i data-lucide="refresh-cw"></i> Change</button>
+              </div>
+            </div>
+
+            <!-- Panel 2: Target Title & Slug Options -->
+            <div class="tool-panel">
+              <div class="panel-header">
+                <span class="panel-title"><i data-lucide="type"></i> Target SEO Title / Description</span>
+                <button id="btn-clean-title" class="btn-sm" title="Clean numbers and special symbols"><i data-lucide="wand-2"></i> Clean Title</button>
+              </div>
+
+              <div>
+                <label for="input-title" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-secondary);">
+                  Image / File Title (Alt Text or Subject):
+                </label>
+                <input type="text" id="input-title" class="tool-input" placeholder="Enter image or file title here..." style="font-size: 0.925rem; font-weight: 500;">
+                <div style="display: flex; justify-content: space-between; margin-top: 0.35rem; font-size: 0.75rem; color: var(--text-muted);">
+                  <span>Describe the content accurately with keywords</span>
+                  <span id="title-char-count">0 chars</span>
+                </div>
+              </div>
+
+              <!-- Formatting Options -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.25rem;">
+                <div>
+                  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
+                    Delimiter:
+                  </label>
+                  <select id="single-delim" class="tool-select" style="width: 100%;">
+                    <option value="-" selected>Hyphen (-) [Google Recommended]</option>
+                    <option value="_">Underscore (_)</option>
+                    <option value=".">Dot (.)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
+                    Extension:
+                  </label>
+                  <select id="single-ext-select" class="tool-select" style="width: 100%;">
+                    <option value="keep" selected>Keep Original</option>
+                    <option value=".webp">Convert name to .webp [Fastest]</option>
+                    <option value=".jpg">Convert name to .jpg</option>
+                    <option value=".png">Convert name to .png</option>
+                    <option value=".svg">Convert name to .svg</option>
+                    <option value="">No extension</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div>
+                  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
+                    Prefix (Optional):
+                  </label>
+                  <input type="text" id="single-prefix" class="tool-input" placeholder="e.g. img-, blog-" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+                </div>
+                <div>
+                  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">
+                    Suffix (Optional):
+                  </label>
+                  <input type="text" id="single-suffix" class="tool-input" placeholder="e.g. -thumb, -hero" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+                </div>
+              </div>
+
+              <!-- Checkbox Toggles -->
+              <div style="display: flex; flex-wrap: wrap; gap: 0.85rem; padding-top: 0.25rem;">
+                <label class="option-group">
+                  <input type="checkbox" id="single-opt-lower" checked>
+                  <span>Lowercase</span>
+                </label>
+                <label class="option-group" title="Removes filler words like 'the', 'a', 'in', 'of' for higher keyword density">
+                  <input type="checkbox" id="single-opt-stopwords" checked>
+                  <span>Strip Stop Words</span>
+                </label>
+                <label class="option-group">
+                  <input type="checkbox" id="single-opt-accents" checked>
+                  <span>Strip Accents (é &rarr; e)</span>
+                </label>
+                <label class="option-group">
+                  <input type="checkbox" id="single-opt-numbers">
+                  <span>Remove Numbers</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Panel 3: SEO Score & Checklist -->
+            <div class="tool-panel">
+              <div class="panel-header">
+                <span class="panel-title"><i data-lucide="gauge"></i> Slug SEO Score</span>
+                <span id="score-grade-pill" class="pill-badge" style="font-size: 0.75rem;">Waiting for input</span>
+              </div>
+
+              <div class="seo-score-container">
+                <div class="seo-score-header">
+                  <div class="score-badge-wrap">
+                    <div id="score-meter" class="score-circle score-neutral">—</div>
+                    <div class="score-label-wrap">
+                      <span class="score-title">Overall Score</span>
+                      <span id="score-summary-text" class="score-grade" style="color: var(--text-secondary);">Awaiting Title or File</span>
+                    </div>
+                  </div>
+                  <div style="text-align: right; font-size: 0.75rem; color: var(--text-muted);">
+                    <span id="score-word-count">0 words</span> • <span id="score-char-count">0 chars</span>
+                  </div>
+                </div>
+
+                <!-- Contextual Recommendation Banner -->
+                <div id="seo-rec-banner" class="seo-tip-banner neutral">
+                  <i data-lucide="lightbulb" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                  <span id="seo-rec-text">Enter an image title or upload a file to evaluate SEO ranking factors.</span>
+                </div>
+
+                <!-- 6-Point Checklist -->
+                <div class="seo-checklist">
+                  <div id="check-separator" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>Hyphen Separator (-)</span>
+                  </div>
+                  <div id="check-length" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>Length (12–55 chars)</span>
+                  </div>
+                  <div id="check-lowercase" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>Strictly Lowercase</span>
+                  </div>
+                  <div id="check-stopwords" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>No Stop Words</span>
+                  </div>
+                  <div id="check-clean" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>No Illegal Symbols</span>
+                  </div>
+                  <div id="check-generic" class="check-item idle">
+                    <i data-lucide="minus" class="check-icon" style="width: 14px; height: 14px;"></i>
+                    <span>Descriptive (Not Generic)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN: Image Preview, Generated Slug & Actions, SEO Tips -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+            <!-- Preview Card -->
+            <div class="tool-panel">
+              <div class="panel-header">
+                <span class="panel-title"><i data-lucide="eye"></i> Preview</span>
+                <div class="panel-actions">
+                  <span id="preview-badge" class="pill-badge">Image Preview</span>
+                </div>
+              </div>
+
+              <div id="preview-box" class="preview-canvas-box">
+                <img id="image-preview" src="" alt="Live Preview" style="display: none;">
+                <div id="preview-placeholder" class="preview-placeholder-text">
+                  <i data-lucide="image" style="width: 36px; height: 36px;"></i>
+                  <span>No image uploaded yet</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Drag and drop or click upload to preview your image</span>
+                </div>
+              </div>
+
+              <!-- Output Slug Display -->
+              <div class="slug-result-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                    Cleaned Filename / Slug:
+                  </span>
+                  <span id="slug-len-badge" style="font-size: 0.725rem; font-family: var(--font-mono); color: var(--text-muted);">0 chars</span>
+                </div>
+
+                <div class="slug-display-row">
+                  <div id="slug-display" class="slug-display-text placeholder" tabindex="0">Slug will appear here once title is entered...</div>
+                  <button id="btn-copy-single" class="btn-sm btn-primary" title="Copy slug to clipboard">
+                    <i data-lucide="copy"></i> Copy
+                  </button>
+                </div>
+
+                <!-- Example Web URL Preview -->
+                <div class="url-preview-box">
+                  https://example.com/images/<span id="url-slug-preview" class="url-slug">—</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                  <button id="btn-download-renamed" class="btn-sm" style="flex: 1; min-width: 140px;" title="Download file with optimized slug name">
+                    <i data-lucide="download"></i> Download Renamed File
+                  </button>
+                  <button id="btn-copy-html" class="btn-sm" title="Copy HTML <img> tag">
+                    <i data-lucide="code"></i> HTML Tag
+                  </button>
+                  <button id="btn-copy-markdown" class="btn-sm" title="Copy Markdown image syntax">
+                    <i data-lucide="file-text"></i> Markdown
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEO Slug Tips Card -->
+            <div class="tips-card">
+              <div class="tips-title">
+                <i data-lucide="compass"></i> SEO Slug Best Practices & Guidelines
+              </div>
+              <ul class="tips-list">
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Always use hyphens (-), never underscores (_):</strong> Search engines treat hyphens as natural word separators, but merge underscores into a single word string (e.g. <code>red-shoes</code> = 2 words, <code>red_shoes</code> = 1 word).
+                  </div>
+                </li>
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Target 3 to 6 descriptive words:</strong> Keep slugs between 12–55 characters. Avoid long sentences that dilute keyword density and risk URL truncation.
+                  </div>
+                </li>
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Strictly use lowercase letters:</strong> Linux/Unix servers (which power most CDNs and clouds) are case-sensitive. Lowercase filenames prevent 404 broken links and duplicate content indexing.
+                  </div>
+                </li>
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Strip stop words & filler words:</strong> Remove words like <em>'a'</em>, <em>'the'</em>, <em>'and'</em>, <em>'of'</em>, <em>'in'</em> to concentrate search relevance on high-value topical keywords.
+                  </div>
+                </li>
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Avoid generic camera or screenshot names:</strong> Never publish raw names like <code>IMG_2026.jpg</code> or <code>Screenshot-1.png</code>. Always replace them with what the image actually depicts.
+                  </div>
+                </li>
+                <li>
+                  <i data-lucide="check-circle-2"></i>
+                  <div>
+                    <strong>Prefer next-gen web formats (.webp, .svg, .avif):</strong> Search engines reward fast pages; WebP offers 25–35% smaller file sizes than traditional JPEG/PNG while maintaining crisp quality.
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= BATCH LIST MODE ================= -->
+      <div id="section-batch" style="display: none;">
+        <div class="tool-options-bar" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <label style="font-size: 0.8rem; font-weight: 600;">Delimiter:</label>
+            <select id="batch-delim" class="tool-select">
+              <option value="-">Hyphen (-)</option>
+              <option value="_">Underscore (_)</option>
+              <option value=".">Dot (.)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <label style="font-size: 0.8rem; font-weight: 600;">Prefix:</label>
+            <input type="text" id="batch-prefix" class="tool-input" placeholder="e.g. img-" style="width: 90px; padding: 0.35rem 0.5rem; font-size: 0.85rem;">
+          </div>
+
+          <label class="option-group">
+            <input type="checkbox" id="batch-opt-lower" checked>
+            <span>Lowercase</span>
+          </label>
+          <label class="option-group">
+            <input type="checkbox" id="batch-opt-stopwords" checked>
+            <span>Remove Stop Words</span>
+          </label>
+          <label class="option-group">
+            <input type="checkbox" id="batch-opt-strip-num">
+            <span>Remove Numbers</span>
+          </label>
+        </div>
+
+        <div class="tool-workspace">
+          <div class="tool-panel">
+            <div class="panel-header">
+              <span class="panel-title"><i data-lucide="file-text"></i> Original File Names / Titles</span>
+              <div class="panel-actions">
+                <button id="btn-batch-clear" class="btn-sm"><i data-lucide="trash-2"></i> Clear</button>
+              </div>
+            </div>
+            <textarea id="batch-input-files" class="tool-textarea" placeholder="Paste image filenames or headlines (one per line)..." style="height: 380px; font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
+            <div class="panel-footer" style="margin-top: 0.5rem;">
+              <span id="batch-input-count">0 items</span>
+            </div>
+          </div>
+
+          <div class="tool-panel">
+            <div class="panel-header">
+              <span class="panel-title"><i data-lucide="check-circle"></i> Cleaned Image Slugs</span>
+              <div class="panel-actions">
+                <button id="btn-batch-copy" class="btn-sm btn-primary"><i data-lucide="copy"></i> Copy List</button>
+                <button id="btn-download-bat" class="btn-sm"><i data-lucide="terminal"></i> Download .bat</button>
+                <button id="btn-download-sh" class="btn-sm"><i data-lucide="code"></i> Download .sh</button>
+              </div>
+            </div>
+            <textarea id="batch-output-slugs" class="tool-textarea" readonly placeholder="Cleaned slugs will appear here..." style="height: 380px; font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
+            <div class="panel-footer" style="margin-top: 0.5rem;">
+              <span id="batch-output-stats">0 lines</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+
+  <script>
+    // Stop Words Set for SEO Optimization
+    const STOP_WORDS = new Set([
+      'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as', 'at',
+      'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
+      'could', 'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further',
+      'had', 'has', 'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how',
+      'i', 'if', 'in', 'into', 'is', 'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself',
+      'no', 'nor', 'not', 'now', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours',
+      'ourselves', 'out', 'over', 'own', 'same', 'she', 'should', 'so', 'some', 'such',
+      'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these', 'they',
+      'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were',
+      'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'would', 'you', 'your', 'yours'
+    ]);
+
+    // DOM Elements - Tabs
+    const tabSingle = document.getElementById('tab-single');
+    const tabBatch = document.getElementById('tab-batch');
+    const sectionSingle = document.getElementById('section-single');
+    const sectionBatch = document.getElementById('section-batch');
+
+    // DOM Elements - Single Mode
+    const singleFileInput = document.getElementById('single-file-input');
+    const singleDropzone = document.getElementById('single-dropzone');
+    const fileDetailsCard = document.getElementById('file-details-card');
+    const metaFilename = document.getElementById('meta-filename');
+    const metaFilesize = document.getElementById('meta-filesize');
+    const metaMimetype = document.getElementById('meta-mimetype');
+    const metaDimWrap = document.getElementById('meta-dim-wrap');
+    const metaDimensions = document.getElementById('meta-dimensions');
+    const btnChangeFile = document.getElementById('btn-change-file');
+
+    const inputTitle = document.getElementById('input-title');
+    const titleCharCount = document.getElementById('title-char-count');
+    const singleDelim = document.getElementById('single-delim');
+    const singleExtSelect = document.getElementById('single-ext-select');
+    const singlePrefix = document.getElementById('single-prefix');
+    const singleSuffix = document.getElementById('single-suffix');
+    const singleOptLower = document.getElementById('single-opt-lower');
+    const singleOptStopwords = document.getElementById('single-opt-stopwords');
+    const singleOptAccents = document.getElementById('single-opt-accents');
+    const singleOptNumbers = document.getElementById('single-opt-numbers');
+
+    const scoreMeter = document.getElementById('score-meter');
+    const scoreSummaryText = document.getElementById('score-summary-text');
+    const scoreGradePill = document.getElementById('score-grade-pill');
+    const scoreWordCount = document.getElementById('score-word-count');
+    const scoreCharCount = document.getElementById('score-char-count');
+    const seoRecBanner = document.getElementById('seo-rec-banner');
+    const seoRecText = document.getElementById('seo-rec-text');
+
+    const checkSeparator = document.getElementById('check-separator');
+    const checkLength = document.getElementById('check-length');
+    const checkLowercase = document.getElementById('check-lowercase');
+    const checkStopwords = document.getElementById('check-stopwords');
+    const checkClean = document.getElementById('check-clean');
+    const checkGeneric = document.getElementById('check-generic');
+
+    const previewBox = document.getElementById('preview-box');
+    const imagePreview = document.getElementById('image-preview');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+    const previewBadge = document.getElementById('preview-badge');
+    const slugDisplay = document.getElementById('slug-display');
+    const urlSlugPreview = document.getElementById('url-slug-preview');
+    const slugLenBadge = document.getElementById('slug-len-badge');
+
+    const btnSingleClear = document.getElementById('btn-single-clear');
+    const btnCleanTitle = document.getElementById('btn-clean-title');
+    const btnCopySingle = document.getElementById('btn-copy-single');
+    const btnDownloadRenamed = document.getElementById('btn-download-renamed');
+    const btnCopyHtml = document.getElementById('btn-copy-html');
+    const btnCopyMarkdown = document.getElementById('btn-copy-markdown');
+
+    // DOM Elements - Batch Mode
+    const batchInputFiles = document.getElementById('batch-input-files');
+    const batchOutputSlugs = document.getElementById('batch-output-slugs');
+    const batchDelim = document.getElementById('batch-delim');
+    const batchPrefix = document.getElementById('batch-prefix');
+    const batchOptLower = document.getElementById('batch-opt-lower');
+    const batchOptStopwords = document.getElementById('batch-opt-stopwords');
+    const batchOptStripNum = document.getElementById('batch-opt-strip-num');
+    const batchInputCount = document.getElementById('batch-input-count');
+    const batchOutputStats = document.getElementById('batch-output-stats');
+    const btnBatchClear = document.getElementById('btn-batch-clear');
+    const btnBatchCopy = document.getElementById('btn-batch-copy');
+    const btnDownloadBat = document.getElementById('btn-download-bat');
+    const btnDownloadSh = document.getElementById('btn-download-sh');
+
+    // Active state for current single file
+    let currentUploadedFile = null;
+    let currentFileOriginalExtension = '';
+
+    // Format file sizes
+    function formatBytes(bytes, decimals = 1) {
+      if (!bytes || bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Tab Navigation
+    tabSingle.addEventListener('click', () => {
+      tabSingle.classList.add('active');
+      tabBatch.classList.remove('active');
+      sectionSingle.style.display = 'block';
+      sectionBatch.style.display = 'none';
+      lucide.createIcons();
+    });
+
+    tabBatch.addEventListener('click', () => {
+      tabBatch.classList.add('active');
+      tabSingle.classList.remove('active');
+      sectionBatch.style.display = 'block';
+      sectionSingle.style.display = 'none';
+      processBatch();
+      lucide.createIcons();
+    });
+
+    // Handle File Selection
+    function handleFile(file) {
+      if (!file) return;
+      currentUploadedFile = file;
+
+      // Extract extension
+      const lastDot = file.name.lastIndexOf('.');
+      if (lastDot > 0) {
+        currentFileOriginalExtension = file.name.substring(lastDot).toLowerCase();
+      } else {
+        currentFileOriginalExtension = '';
+      }
+
+      // Update file metadata
+      metaFilename.textContent = file.name;
+      metaFilesize.textContent = formatBytes(file.size);
+      metaMimetype.textContent = file.type || 'application/octet-stream';
+      fileDetailsCard.style.display = 'flex';
+
+      // Update extension select label
+      const keepOpt = singleExtSelect.querySelector('option[value="keep"]');
+      if (keepOpt) {
+        keepOpt.textContent = `Keep Original (${currentFileOriginalExtension || 'none'})`;
+      }
+
+      // Populate Title if empty or was generic
+      const rawBaseName = file.name.substring(0, lastDot > 0 ? lastDot : file.name.length);
+      const cleanInitialTitle = rawBaseName
+        .replace(/[_\-+]/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!inputTitle.value.trim() || inputTitle.value.trim() === 'sample-image') {
+        inputTitle.value = cleanInitialTitle;
+      }
+
+      // Preview file
+      if (file.type && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = 'block';
+          previewPlaceholder.style.display = 'none';
+          const subType = file.type.split('/')[1] || 'IMAGE';
+          previewBadge.textContent = `${subType.toUpperCase()} Image`;
+
+          // Get image dimensions
+          const img = new Image();
+          img.onload = () => {
+            metaDimWrap.style.display = 'inline';
+            metaDimensions.textContent = `${img.naturalWidth} × ${img.naturalHeight} px`;
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Non-image file
+        imagePreview.style.display = 'none';
+        previewPlaceholder.style.display = 'flex';
+        previewPlaceholder.innerHTML = `
+          <i data-lucide="file" style="width: 36px; height: 36px;"></i>
+          <span style="font-weight: 600; color: var(--text-primary);">${file.name}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${formatBytes(file.size)} • ${file.type || 'Binary file'}</span>
+        `;
+        metaDimWrap.style.display = 'none';
+        previewBadge.textContent = 'Document / File';
+        lucide.createIcons();
+      }
+
+      updateSingleSlug();
+    }
+
+    // Setup Dropzone Events
+    singleDropzone.addEventListener('click', () => singleFileInput.click());
+    btnChangeFile.addEventListener('click', () => singleFileInput.click());
+
+    singleFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      singleDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        singleDropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      singleDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        singleDropzone.classList.remove('dragover');
+      });
+    });
+
+    singleDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      singleDropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // Paste file from clipboard
+    window.addEventListener('paste', (e) => {
+      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
+        handleFile(file);
+        showToast('File Pasted', `Loaded ${file.name || 'clipboard file'}`);
+      }
+    });
+
+    // Generate Slug Algorithm
+    function computeSlug(text, delim, prefix, suffix, lower, removeStopwords, removeAccents, removeNumbers) {
+      if (!text || !text.trim()) return '';
+
+      let str = text;
+
+      // Accents normalization
+      if (removeAccents) {
+        str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+
+      // Case conversion
+      if (lower) {
+        str = str.toLowerCase();
+      }
+
+      // Remove numbers if enabled
+      if (removeNumbers) {
+        str = str.replace(/[0-9]/g, '');
+      }
+
+      // Replace special symbols and punctuation with space
+      str = str.replace(/[^a-zA-Z0-9\s]/g, ' ');
+
+      // Split into words
+      let tokens = str.trim().split(/\s+/).filter(Boolean);
+
+      // Filter stop words if enabled
+      if (removeStopwords) {
+        const filtered = tokens.filter(tok => !STOP_WORDS.has(tok.toLowerCase()));
+        if (filtered.length > 0) {
+          tokens = filtered;
+        }
+      }
+
+      let slug = tokens.join(delim);
+
+      if (prefix) {
+        const p = prefix.trim();
+        if (p && !slug.startsWith(p)) slug = p + slug;
+      }
+
+      if (suffix) {
+        const s = suffix.trim();
+        if (s && !slug.endsWith(s)) slug = slug + s;
+      }
+
+      return slug;
+    }
+
+    // SEO Score Calculator
+    function calculateSeoScore(rawTitle, slug, delim, ext, lower, removeStopwords) {
+      let score = 100;
+      const issues = [];
+      const checks = {
+        separator: false,
+        length: false,
+        lowercase: false,
+        stopwords: false,
+        clean: false,
+        generic: false
+      };
+
+      if (!slug) {
+        return {
+          score: 0,
+          grade: 'Awaiting Input',
+          colorClass: 'score-neutral',
+          checks,
+          recommendation: 'Enter an image title or upload a file to calculate SEO score.'
+        };
+      }
+
+      // 1. Separator Check (Hyphen is best practice for Google)
+      if (delim === '-') {
+        checks.separator = true;
+      } else {
+        checks.separator = false;
+        score -= 15;
+        issues.push('Change separator to hyphen (-), which is Google\'s official recommendation.');
+      }
+
+      // 2. Length Check (Optimal: 12 to 55 characters, or 2 to 6 words)
+      const words = slug.split(delim).filter(Boolean);
+      const slugLen = slug.length;
+      if (slugLen >= 12 && slugLen <= 55 && words.length >= 2 && words.length <= 6) {
+        checks.length = true;
+      } else if (slugLen < 12 || words.length < 2) {
+        checks.length = false;
+        score -= 20;
+        issues.push('Slug is too short. Aim for 3–5 descriptive keywords.');
+      } else if (slugLen > 70 || words.length > 8) {
+        checks.length = false;
+        score -= 20;
+        issues.push('Slug is too long. Keep it concise to avoid keyword dilution.');
+      } else {
+        checks.length = true;
+        score -= 5;
+      }
+
+      // 3. Lowercase Check
+      if (lower && slug === slug.toLowerCase()) {
+        checks.lowercase = true;
+      } else {
+        checks.lowercase = false;
+        score -= 20;
+        issues.push('Use all-lowercase letters to prevent 404 dead links on web servers.');
+      }
+
+      // 4. Stop Words Check
+      const foundStopWords = words.filter(w => STOP_WORDS.has(w.toLowerCase()));
+      if (foundStopWords.length === 0) {
+        checks.stopwords = true;
+      } else {
+        checks.stopwords = false;
+        score -= 15;
+        issues.push(`Remove filler stop words ("${foundStopWords.slice(0, 2).join('", "')}") to increase keyword density.`);
+      }
+
+      // 5. Cleanliness Check (No illegal chars, spaces, weird sequences)
+      const hasBadChars = /[^a-zA-Z0-9\-_.]/.test(slug) || /--|__|__/.test(slug);
+      if (!hasBadChars) {
+        checks.clean = true;
+      } else {
+        checks.clean = false;
+        score -= 20;
+        issues.push('Remove special symbols or repetitive punctuation.');
+      }
+
+      // 6. Generic Camera Name Check (IMG_, DSC_, Screenshot, Photo)
+      const isGeneric = /^(img|dsc|screenshot|photo|image|picture|untitled|asset|pic)[\-_0-9]*/i.test(slug);
+      if (!isGeneric) {
+        checks.generic = true;
+      } else {
+        checks.generic = false;
+        score -= 25;
+        issues.push('Replace generic camera prefix (e.g. "IMG_", "Screenshot") with descriptive keywords.');
+      }
+
+      score = Math.max(10, Math.min(100, score));
+
+      let grade = 'Excellent SEO';
+      let colorClass = 'score-excellent';
+      if (score < 65) {
+        grade = 'Needs Optimization';
+        colorClass = 'score-poor';
+      } else if (score < 85) {
+        grade = 'Good Structure';
+        colorClass = 'score-good';
+      }
+
+      const recommendation = issues.length > 0 
+        ? issues[0] 
+        : 'Your slug is well-structured and follows search engine best practices!';
+
+      return {
+        score,
+        grade,
+        colorClass,
+        checks,
+        recommendation
+      };
+    }
+
+    // Update Checklist DOM
+    function updateChecklistDom(checks, hasInput) {
+      function applyStatus(element, isPass) {
+        if (!hasInput) {
+          element.className = 'check-item idle';
+          const icon = element.querySelector('.check-icon');
+          if (icon) icon.setAttribute('data-lucide', 'minus');
+          return;
+        }
+        element.className = 'check-item ' + (isPass ? 'pass' : 'fail');
+        const icon = element.querySelector('.check-icon');
+        if (icon) {
+          icon.setAttribute('data-lucide', isPass ? 'check' : 'x');
+        }
+      }
+
+      applyStatus(checkSeparator, checks.separator);
+      applyStatus(checkLength, checks.length);
+      applyStatus(checkLowercase, checks.lowercase);
+      applyStatus(checkStopwords, checks.stopwords);
+      applyStatus(checkClean, checks.clean);
+      applyStatus(checkGeneric, checks.generic);
+
+      lucide.createIcons();
+    }
+
+    // Main Single Slug Update Loop
+    function updateSingleSlug() {
+      const title = inputTitle.value || '';
+      titleCharCount.textContent = `${title.length} chars`;
+
+      const delim = singleDelim.value;
+      const prefix = singlePrefix.value;
+      const suffix = singleSuffix.value;
+      const lower = singleOptLower.checked;
+      const removeStopwords = singleOptStopwords.checked;
+      const removeAccents = singleOptAccents.checked;
+      const removeNumbers = singleOptNumbers.checked;
+
+      const baseSlug = computeSlug(title, delim, prefix, suffix, lower, removeStopwords, removeAccents, removeNumbers);
+
+      // Determine extension
+      let finalExt = currentFileOriginalExtension || '';
+      const extChoice = singleExtSelect.value;
+      if (extChoice === 'keep') {
+        finalExt = currentFileOriginalExtension;
+      } else {
+        finalExt = extChoice;
+      }
+
+      if (finalExt && !finalExt.startsWith('.')) {
+        finalExt = '.' + finalExt;
+      }
+
+      const fullSlug = baseSlug ? (baseSlug + finalExt) : '';
+
+      // Update Output Display
+      if (fullSlug) {
+        slugDisplay.textContent = fullSlug;
+        slugDisplay.classList.remove('placeholder');
+        urlSlugPreview.textContent = fullSlug;
+        slugLenBadge.textContent = `${fullSlug.length} chars`;
+      } else {
+        slugDisplay.textContent = 'Slug will appear here once title is entered...';
+        slugDisplay.classList.add('placeholder');
+        urlSlugPreview.textContent = '—';
+        slugLenBadge.textContent = '0 chars';
+      }
+
+      // Calculate SEO Score
+      if (!baseSlug) {
+        scoreMeter.textContent = '—';
+        scoreMeter.className = 'score-circle score-neutral';
+        scoreSummaryText.textContent = 'Awaiting Title or File';
+        scoreSummaryText.className = 'score-grade';
+        scoreSummaryText.style.color = 'var(--text-secondary)';
+        scoreGradePill.textContent = 'Waiting for input';
+        scoreGradePill.style.color = 'var(--text-muted)';
+        scoreWordCount.textContent = '0 words';
+        scoreCharCount.textContent = '0 chars';
+        seoRecText.textContent = 'Enter an image title or upload a file to evaluate SEO ranking factors.';
+        seoRecBanner.className = 'seo-tip-banner neutral';
+        updateChecklistDom({}, false);
+        return;
+      }
+
+      const analysis = calculateSeoScore(title, baseSlug, delim, finalExt, lower, removeStopwords);
+
+      scoreMeter.textContent = analysis.score;
+      scoreMeter.className = `score-circle ${analysis.colorClass}`;
+      scoreSummaryText.textContent = analysis.grade;
+      scoreSummaryText.className = `score-grade ${analysis.colorClass}`;
+      scoreSummaryText.style.color = '';
+      scoreGradePill.textContent = `${analysis.score}/100`;
+      scoreGradePill.style.color = analysis.score >= 85 ? '#10b981' : (analysis.score >= 65 ? '#f59e0b' : '#ef4444');
+
+      const wordList = baseSlug.split(delim).filter(Boolean);
+      scoreWordCount.textContent = `${wordList.length} words`;
+      scoreCharCount.textContent = `${fullSlug.length} chars`;
+
+      seoRecText.textContent = analysis.recommendation;
+      if (analysis.score >= 85) {
+        seoRecBanner.className = 'seo-tip-banner perfect';
+      } else {
+        seoRecBanner.className = 'seo-tip-banner';
+      }
+
+      updateChecklistDom(analysis.checks, true);
+    }
+
+    // Quick Clean Title Button
+    btnCleanTitle.addEventListener('click', () => {
+      let t = inputTitle.value.trim();
+      if (!t) return;
+      t = t.replace(/\.[a-zA-Z0-9]{2,5}$/, '');
+      t = t.replace(/^(img|dsc|screenshot|photo|image|picture)[\-_0-9]*/i, '');
+      t = t.replace(/[_\-+]+/g, ' ')
+           .replace(/[^a-zA-Z0-9\s]/g, ' ')
+           .replace(/\s+/g, ' ')
+           .trim();
+      t = t.replace(/\b\w/g, c => c.toUpperCase());
+      inputTitle.value = t;
+      updateSingleSlug();
+      showToast('Title Cleaned', 'Standardized title format.');
+    });
+
+    // Copy Single Slug
+    btnCopySingle.addEventListener('click', () => {
+      const slug = slugDisplay.textContent.trim();
+      if (slugDisplay.classList.contains('placeholder') || !slug) {
+        showToast('Nothing to copy', 'Please enter a title or upload a file first.');
+        return;
+      }
+      copyToClipboard(slug, 'Clean Slug');
+    });
+
+    // Copy HTML <img> tag
+    btnCopyHtml.addEventListener('click', () => {
+      const slug = slugDisplay.textContent.trim();
+      if (slugDisplay.classList.contains('placeholder') || !slug) {
+        showToast('Nothing to copy', 'Please enter a title or upload a file first.');
+        return;
+      }
+      const alt = inputTitle.value.trim() || 'Image';
+      const tag = `<img src="${slug}" alt="${alt}" loading="lazy">`;
+      copyToClipboard(tag, 'HTML Image Tag');
+    });
+
+    // Copy Markdown snippet
+    btnCopyMarkdown.addEventListener('click', () => {
+      const slug = slugDisplay.textContent.trim();
+      if (slugDisplay.classList.contains('placeholder') || !slug) {
+        showToast('Nothing to copy', 'Please enter a title or upload a file first.');
+        return;
+      }
+      const alt = inputTitle.value.trim() || 'Image';
+      const md = `![${alt}](${slug})`;
+      copyToClipboard(md, 'Markdown Image Tag');
+    });
+
+    // Download Renamed File
+    btnDownloadRenamed.addEventListener('click', () => {
+      const slug = slugDisplay.textContent.trim();
+      if (slugDisplay.classList.contains('placeholder') || !slug) {
+        showToast('No slug ready', 'Please provide a title first.');
+        return;
+      }
+
+      if (currentUploadedFile) {
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(currentUploadedFile);
+        a.href = url;
+        a.download = slug;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Downloaded Renamed File', `Saved as ${slug}`);
+      } else {
+        downloadTextFile(slug, `Optimized slug: ${slug}\nTitle: ${inputTitle.value}`);
+      }
+    });
+
+    // Reset / Clear Single Mode
+    btnSingleClear.addEventListener('click', () => {
+      currentUploadedFile = null;
+      currentFileOriginalExtension = '';
+      inputTitle.value = '';
+      fileDetailsCard.style.display = 'none';
+      imagePreview.style.display = 'none';
+      imagePreview.src = '';
+      previewPlaceholder.style.display = 'flex';
+      previewPlaceholder.innerHTML = `
+        <i data-lucide="image" style="width: 36px; height: 36px;"></i>
+        <span>No image uploaded yet</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Drag and drop or click upload to preview your image</span>
+      `;
+      previewBadge.textContent = 'Image Preview';
+      singleExtSelect.querySelector('option[value="keep"]').textContent = 'Keep Original';
+      updateSingleSlug();
+      lucide.createIcons();
+    });
+
+    // Single Form Input Listeners
+    [
+      inputTitle,
+      singleDelim,
+      singleExtSelect,
+      singlePrefix,
+      singleSuffix,
+      singleOptLower,
+      singleOptStopwords,
+      singleOptAccents,
+      singleOptNumbers
+    ].forEach(el => {
+      el.addEventListener('input', updateSingleSlug);
+      el.addEventListener('change', updateSingleSlug);
+    });
+
+    // ================= BATCH MODE PROCESSING =================
+    function cleanBatchLine(line, delim, prefix, lower, removeStopwords, stripNum) {
+      if (!line.trim()) return '';
+
+      const lastDot = line.lastIndexOf('.');
+      let name = line;
+      let ext = '';
+      if (lastDot > 0 && lastDot > line.length - 6) {
+        name = line.substring(0, lastDot);
+        ext = line.substring(lastDot);
+      }
+
+      if (lower) {
+        name = name.toLowerCase();
+        ext = ext.toLowerCase();
+      }
+
+      if (stripNum) {
+        name = name.replace(/[0-9]/g, '');
+      }
+
+      let cleaned = name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .trim();
+
+      let tokens = cleaned.split(/\s+/).filter(Boolean);
+
+      if (removeStopwords) {
+        const filtered = tokens.filter(t => !STOP_WORDS.has(t.toLowerCase()));
+        if (filtered.length > 0) tokens = filtered;
+      }
+
+      let slug = tokens.join(delim);
+
+      if (prefix) {
+        slug = prefix.trim() + slug;
+      }
+
+      return slug + ext;
+    }
+
+    function processBatch() {
+      const raw = batchInputFiles.value;
+      const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+      batchInputCount.textContent = `${lines.length} items`;
+
+      const delim = batchDelim.value;
+      const prefix = batchPrefix.value;
+      const lower = batchOptLower.checked;
+      const removeStopwords = batchOptStopwords.checked;
+      const stripNum = batchOptStripNum.checked;
+
+      const results = lines.map(line => cleanBatchLine(line, delim, prefix, lower, removeStopwords, stripNum));
+      batchOutputSlugs.value = results.join('\n');
+      batchOutputStats.textContent = `${results.length} clean slugs`;
+    }
+
+    [batchInputFiles, batchDelim, batchPrefix, batchOptLower, batchOptStopwords, batchOptStripNum].forEach(el => {
+      el.addEventListener('input', processBatch);
+      el.addEventListener('change', processBatch);
+    });
+
+    btnBatchClear.addEventListener('click', () => {
+      batchInputFiles.value = '';
+      batchOutputSlugs.value = '';
+      batchInputCount.textContent = '0 items';
+      batchOutputStats.textContent = '0 lines';
+      batchInputFiles.focus();
+    });
+
+    btnBatchCopy.addEventListener('click', () => {
+      copyToClipboard(batchOutputSlugs.value, 'Batch image slugs');
+    });
+
+    btnDownloadBat.addEventListener('click', () => {
+      const inLines = batchInputFiles.value.split(/\r?\n/).filter(l => l.trim().length > 0);
+      const outLines = batchOutputSlugs.value.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (inLines.length === 0) {
+        showToast('Nothing to rename', 'Batch list is empty.');
+        return;
+      }
+      let bat = '@echo off\n';
+      for (let i = 0; i < Math.min(inLines.length, outLines.length); i++) {
+        bat += `ren "${inLines[i]}" "${outLines[i]}"\n`;
+      }
+      downloadTextFile('rename_images.bat', bat);
+    });
+
+    btnDownloadSh.addEventListener('click', () => {
+      const inLines = batchInputFiles.value.split(/\r?\n/).filter(l => l.trim().length > 0);
+      const outLines = batchOutputSlugs.value.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (inLines.length === 0) {
+        showToast('Nothing to rename', 'Batch list is empty.');
+        return;
+      }
+      let sh = '#!/bin/bash\n';
+      for (let i = 0; i < Math.min(inLines.length, outLines.length); i++) {
+        sh += `mv "${inLines[i]}" "${outLines[i]}"\n`;
+      }
+      downloadTextFile('rename_images.sh', sh);
+    });
+
+    // Initialize clean empty state on startup
+    updateSingleSlug();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
