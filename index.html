@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DevTools - Essential Developer Utility Suite</title>
+  <meta name="description" content="Minimal, privacy-focused developer utilities: Base64 encoder/decoder, app icon generator, slug generator, cron job builder, robots.txt, and sitemap generator. 100% client-side.">
+  <meta name="keywords" content="developer tools, devtools, base64 encoder, base64 decoder, app icon generator, slug generator, cron job generator, robots.txt generator, sitemap generator, web developer utilities, client side tools">
+  <meta name="author" content="Shakib Khan">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://ichshakib.github.io/dev-tools/">
+
+  <!-- Theme Color for Mobile Browsers -->
+  <meta name="theme-color" content="#0c0c0e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ichshakib.github.io/dev-tools/">
+  <meta property="og:site_name" content="DevTools">
+  <meta property="og:title" content="DevTools - Essential Developer Utility Suite">
+  <meta property="og:description" content="Minimal, privacy-focused developer utilities: Base64 encoder/decoder, app icon generator, slug generator, cron job builder, robots.txt, and sitemap generator. 100% client-side.">
+  <meta property="og:image" content="favicon_io/android-chrome-512x512.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://ichshakib.github.io/dev-tools/">
+  <meta name="twitter:title" content="DevTools - Essential Developer Utility Suite">
+  <meta name="twitter:description" content="Minimal, privacy-focused developer utilities: Base64 encoder/decoder, app icon generator, slug generator, cron job builder, robots.txt, and sitemap generator. 100% client-side.">
+  <meta name="twitter:image" content="favicon_io/android-chrome-512x512.png">
+  <meta name="twitter:creator" content="@ichshakib">
+
+  <!-- Favicon & App Icons from favicon_io -->
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="favicon_io/favicon.ico">
+  <link rel="manifest" href="favicon_io/site.webmanifest">
+
+  <!-- Fonts & Stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="components.js"></script>
+
+  <!-- Structured Data / JSON-LD for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "DevTools",
+    "url": "https://ichshakib.github.io/dev-tools/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Minimal, fast, client-side utilities for daily engineering. Base64 encoder/decoder, app icon generator, slug generator, cron job builder, robots.txt and sitemap generator.",
+    "author": {
+      "@type": "Person",
+      "name": "Shakib Khan",
+      "url": "https://github.com/ichshakib"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <!-- Hero Section -->
+  <main class="main-content">
+    <section class="hero-section">
+      <div class="container hero-container">
+        <div class="hero-badge">
+          <span>Open Source Developer Toolkit</span>
+        </div>
+        <h1 class="hero-title">Developer Utilities</h1>
+        <p class="hero-subtitle">Minimal, fast, client-side tools for daily engineering. Clean, lightweight, and completely private in your browser.</p>
+
+        <!-- Search Box -->
+        <div class="search-wrapper">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="tool-search" placeholder="Search utilities (e.g. base64, cron, icon, slug, sitemap)..." autocomplete="off" spellcheck="false">
+            <button id="search-clear" class="search-clear" aria-label="Clear search" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div class="search-shortcut">
+              <kbd class="kbd-key">Ctrl</kbd>
+              <kbd class="kbd-key">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Categories -->
+        <div class="category-filters" role="tablist" aria-label="Tool categories">
+          <button class="filter-pill active" data-category="all" role="tab" aria-selected="true">
+            <span>All</span>
+            <span class="filter-count" id="count-all">0</span>
+          </button>
+          <button class="filter-pill" data-category="generators" role="tab" aria-selected="false">
+            <span>Generators</span>
+            <span class="filter-count" id="count-generators">0</span>
+          </button>
+          <button class="filter-pill" data-category="converters" role="tab" aria-selected="false">
+            <span>Converters</span>
+            <span class="filter-count" id="count-converters">0</span>
+          </button>
+          <button class="filter-pill" data-category="seo" role="tab" aria-selected="false">
+            <span>SEO & Web</span>
+            <span class="filter-count" id="count-seo">0</span>
+          </button>
+          <button class="filter-pill" data-category="formatters" role="tab" aria-selected="false">
+            <span>Formatters</span>
+            <span class="filter-count" id="count-formatters">0</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools Grid Section -->
+    <section class="tools-section">
+      <div class="container">
+        <div class="section-meta">
+          <h2 class="section-heading" id="tools-heading">Tools</h2>
+          <span class="results-stats" id="results-stats">Showing 20 tools</span>
+        </div>
+
+        <!-- Card Grid Container -->
+        <div class="tools-grid" id="tools-grid">
+          <!-- Dynamically populated by app.js -->
+        </div>
+
+        <!-- Empty State Container -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </div>
+          <h3>No tools found</h3>
+          <p id="empty-message">No utilities matched your query.</p>
+          <button class="btn btn-secondary" id="reset-filter-btn">Reset search & filters</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Notification Toast -->
+  <div class="toast" id="toast" role="alert" aria-live="polite">
+    <div class="toast-content">
+      <span class="toast-indicator"></span>
+      <div class="toast-body">
+        <strong id="toast-title">Tool Selected</strong>
+        <p id="toast-message">Opening tool...</p>
+      </div>
+    </div>
+    <button class="toast-close" id="toast-close" aria-label="Dismiss notification">&times;</button>
+  </div>
+
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
