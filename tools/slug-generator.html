@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Slug Generator - DevTools</title>
+  <meta name="description" content="Generate clean, SEO-optimized URL slugs from text strings with custom delimiters, diacritic stripping, and stop-word filtering.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../favicon_io/favicon.ico">
+  <link rel="manifest" href="../favicon_io/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  <script src="../components.js"></script>
+</head>
+<body>
+  <!-- Main Navigation (Hydrated by components.js) -->
+  <header id="site-header" class="site-header"></header>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link">&larr; Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">Slug Generator</h1>
+          <span class="tool-badge">Generators</span>
+        </div>
+        <p class="tool-page-desc">Convert articles, titles, or strings into URL-safe, clean, and SEO-friendly slugs with customizable separators and normalization options.</p>
+      </div>
+
+      <!-- Controls & Options -->
+      <div class="tool-options-bar" style="margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Separator:</span>
+          <select id="opt-delimiter" class="tool-select">
+            <option value="-">Hyphen (-)</option>
+            <option value="_">Underscore (_)</option>
+            <option value=".">Dot (.)</option>
+            <option value="">None (Concatenated)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Case:</span>
+          <select id="opt-case" class="tool-select">
+            <option value="lower">lowercase</option>
+            <option value="upper">UPPERCASE</option>
+            <option value="preserve">Preserve Case</option>
+          </select>
+        </div>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-accents" checked>
+          <span>Normalize accents (é &rarr; e)</span>
+        </label>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-stopwords">
+          <span>Strip stop words (the, a, and, in...)</span>
+        </label>
+
+        <label class="option-group">
+          <input type="checkbox" id="opt-numbers">
+          <span>Remove numbers</span>
+        </label>
+      </div>
+
+      <!-- Main Workspace -->
+      <div class="tool-workspace">
+        <!-- Input Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title">Original Text / Headline</span>
+            <div class="panel-actions">
+              <button id="btn-clear" class="btn-sm">Clear</button>
+            </div>
+          </div>
+          <textarea id="input-text" class="tool-textarea" placeholder="Type or paste headline or title here..." spellcheck="false"></textarea>
+          <div class="panel-footer">
+            <span id="input-stats">0 words, 0 chars</span>
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title">Generated URL Slug</span>
+            <div class="panel-actions">
+              <button id="btn-copy" class="btn-sm btn-primary">Copy Slug</button>
+            </div>
+          </div>
+          <textarea id="output-text" class="tool-textarea" readonly spellcheck="false" style="min-height: 120px;"></textarea>
+          
+          <div style="margin-top: 0.5rem;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Example URL Preview:</span>
+            <div id="url-preview" style="margin-top: 0.35rem; padding: 0.6rem 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.825rem; color: var(--text-secondary); word-break: break-all;">
+              https://example.com/<span id="slug-preview" style="color: var(--text-primary); font-weight: 600;"></span>
+            </div>
+          </div>
+
+          <div class="panel-footer" style="margin-top: auto;">
+            <span id="output-stats">0 chars</span>
+            <span>Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <!-- Detailed Footer (Hydrated by components.js) -->
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <script src="common.js"></script>
+  <script>
+    const STOP_WORDS = new Set([
+      'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as', 'at',
+      'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'could', 'did', 'do',
+      'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has', 'have', 'having',
+      'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it',
+      'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now', 'of', 'off', 'on',
+      'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she',
+      'should', 'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then',
+      'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was',
+      'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'would', 'you', 'your'
+    ]);
+
+    const inputText = document.getElementById('input-text');
+    const outputText = document.getElementById('output-text');
+    const slugPreview = document.getElementById('slug-preview');
+    const optDelimiter = document.getElementById('opt-delimiter');
+    const optCase = document.getElementById('opt-case');
+    const optAccents = document.getElementById('opt-accents');
+    const optStopwords = document.getElementById('opt-stopwords');
+    const optNumbers = document.getElementById('opt-numbers');
+    const inputStats = document.getElementById('input-stats');
+    const outputStats = document.getElementById('output-stats');
+
+    function generateSlug() {
+      let str = inputText.value || '';
+      
+      const words = str.trim() ? str.trim().split(/\s+/).length : 0;
+      inputStats.textContent = `${words} words, ${str.length} chars`;
+
+      if (!str.trim()) {
+        outputText.value = '';
+        slugPreview.textContent = '';
+        outputStats.textContent = '0 chars';
+        return;
+      }
+
+      // Accents / Diacritics normalization
+      if (optAccents.checked) {
+        str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+
+      // Case conversion
+      if (optCase.value === 'lower') {
+        str = str.toLowerCase();
+      } else if (optCase.value === 'upper') {
+        str = str.toUpperCase();
+      }
+
+      // Remove numbers if enabled
+      if (optNumbers.checked) {
+        str = str.replace(/[0-9]/g, '');
+      }
+
+      // Replace symbols and punctuation with space
+      str = str.replace(/[^a-zA-Z0-9\s]/g, ' ');
+
+      // Split into words
+      let tokens = str.trim().split(/\s+/).filter(Boolean);
+
+      // Filter stop words if enabled
+      if (optStopwords.checked) {
+        tokens = tokens.filter(token => !STOP_WORDS.has(token.toLowerCase()));
+      }
+
+      const delimiter = optDelimiter.value;
+      const slug = tokens.join(delimiter);
+
+      outputText.value = slug;
+      slugPreview.textContent = slug;
+      outputStats.textContent = `${slug.length} chars`;
+    }
+
+    [inputText, optDelimiter, optCase, optAccents, optStopwords, optNumbers].forEach(el => {
+      el.addEventListener('input', generateSlug);
+      el.addEventListener('change', generateSlug);
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      copyToClipboard(outputText.value, 'Slug');
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputText.value = '';
+      generateSlug();
+      inputText.focus();
+    });
+
+    // Initial run
+    generateSlug();
+  </script>
+</body>
+</html>

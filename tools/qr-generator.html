@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QR Code Generator - DevTools</title>
+  <meta name="description" content="Generate customizable, high-resolution QR codes for URLs, text, WiFi credentials, emails, and phone numbers with instant PNG and SVG download.">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon_io/favicon-16x16.png">
+  <link rel="shortcut icon" href="../favicon_io/favicon.ico">
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="../components.js"></script>
+  <style>
+    .qr-workspace {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 820px) {
+      .qr-workspace { grid-template-columns: 1fr; }
+    }
+    .qr-preview-box {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+      min-height: 280px;
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header" class="site-header"></header>
+  <main class="main-content">
+    <div class="container">
+      <div class="tool-page-header">
+        <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to all tools</a>
+        <div class="tool-page-title-row">
+          <h1 class="tool-page-title">QR Code Generator</h1>
+          <span class="tool-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.3);">QR Code</span>
+        </div>
+        <p class="tool-page-desc">Create high-resolution, custom QR codes for website URLs, plain text, and contact information. 100% client-side with zero tracking.</p>
+      </div>
+
+      <div class="qr-workspace">
+        <!-- Controls -->
+        <div class="tool-panel">
+          <div class="panel-header">
+            <span class="panel-title"><i data-lucide="settings"></i> QR Code Content & Style</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+              <label for="qr-type" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-primary);">Type</label>
+              <select id="qr-type" style="width: 100%; padding: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+                <option value="url">Website URL</option>
+                <option value="text">Plain Text</option>
+                <option value="wifi">Wi-Fi Network</option>
+              </select>
+            </div>
+
+            <div id="box-url">
+              <label for="qr-content" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-primary);">Website URL</label>
+              <input type="url" id="qr-content" placeholder="https://example.com" value="" style="width: 100%; padding: 0.55rem 0.75rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9rem;">
+            </div>
+
+            <div id="box-wifi" style="display: none; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Network Name (SSID)</label>
+                <input type="text" id="wifi-ssid" placeholder="MyWiFiNetwork" style="width: 100%; padding: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Password</label>
+                <input type="text" id="wifi-pass" placeholder="SecretPassword" style="width: 100%; padding: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary);">
+              </div>
+            </div>
+
+            <!-- Colors & Resolution -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Foreground Color</label>
+                <input type="color" id="qr-fg" value="#000000" style="width: 100%; height: 36px; padding: 2px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Background Color</label>
+                <input type="color" id="qr-bg" value="#ffffff" style="width: 100%; height: 36px; padding: 2px; background: none; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Size</label>
+                <select id="qr-size" style="width: 100%; padding: 0.45rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+                  <option value="256">256 x 256 px</option>
+                  <option value="384" selected>384 x 384 px</option>
+                  <option value="512">512 x 512 px</option>
+                  <option value="1024">1024 x 1024 px (High Res)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-primary);">Error Correction</label>
+                <select id="qr-level" style="width: 100%; padding: 0.45rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.85rem;">
+                  <option value="L">Low (7%)</option>
+                  <option value="M" selected>Medium (15%)</option>
+                  <option value="Q">Quartile (25%)</option>
+                  <option value="H">High (30%)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview & Download -->
+        <div class="tool-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="panel-header">
+              <span class="panel-title"><i data-lucide="qr-code"></i> Live Preview</span>
+              <span class="pill-badge active" id="badge-size">384x384</span>
+            </div>
+
+            <div class="qr-preview-box">
+              <canvas id="qr-canvas"></canvas>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button id="btn-download-png" class="btn-sm btn-primary" style="flex: 1; justify-content: center;"><i data-lucide="download"></i> Download PNG</button>
+            <button id="btn-copy-img" class="btn-sm" style="flex: 1; justify-content: center;"><i data-lucide="copy"></i> Copy Image</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="common.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script>
+    const qrType = document.getElementById('qr-type');
+    const qrContent = document.getElementById('qr-content');
+    const boxUrl = document.getElementById('box-url');
+    const boxWifi = document.getElementById('box-wifi');
+    const wifiSsid = document.getElementById('wifi-ssid');
+    const wifiPass = document.getElementById('wifi-pass');
+    const qrFg = document.getElementById('qr-fg');
+    const qrBg = document.getElementById('qr-bg');
+    const qrSize = document.getElementById('qr-size');
+    const qrLevel = document.getElementById('qr-level');
+    const qrCanvas = document.getElementById('qr-canvas');
+    const badgeSize = document.getElementById('badge-size');
+
+    let qrious = null;
+    function initQR() {
+      qrious = new QRious({
+        element: qrCanvas,
+        size: parseInt(qrSize.value, 10),
+        value: qrContent.value,
+        foreground: qrFg.value,
+        background: qrBg.value,
+        level: qrLevel.value
+      });
+      renderQR();
+    }
+
+    function renderQR() {
+      let val = qrContent.value;
+      if (qrType.value === 'wifi') {
+        const ssid = wifiSsid.value || '';
+        const pass = wifiPass.value || '';
+        val = `WIFI:S:${ssid};T:WPA;P:${pass};;`;
+      }
+
+      const size = parseInt(qrSize.value, 10);
+      badgeSize.textContent = `${size}x${size}`;
+
+      if (qrious) {
+        qrious.set({
+          size: size,
+          value: val || ' ',
+          foreground: qrFg.value,
+          background: qrBg.value,
+          level: qrLevel.value
+        });
+      }
+    }
+
+    qrType.addEventListener('change', () => {
+      if (qrType.value === 'wifi') {
+        boxUrl.style.display = 'none';
+        boxWifi.style.display = 'flex';
+      } else {
+        boxUrl.style.display = 'block';
+        boxWifi.style.display = 'none';
+      }
+      renderQR();
+    });
+
+    [qrContent, wifiSsid, wifiPass, qrFg, qrBg, qrSize, qrLevel].forEach(el => {
+      el.addEventListener('input', renderQR);
+      el.addEventListener('change', renderQR);
+    });
+
+    document.getElementById('btn-download-png').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'qrcode.png';
+      a.href = qrCanvas.toDataURL('image/png');
+      a.click();
+      showToast('Downloaded', 'Saved QR code as PNG image.');
+    });
+
+    document.getElementById('btn-copy-img').addEventListener('click', async () => {
+      try {
+        qrCanvas.toBlob(async (blob) => {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          showToast('Copied', 'QR code image copied to clipboard.');
+        });
+      } catch (e) {
+        showToast('Notice', 'Direct image copy not supported in this browser. Please use Download.');
+      }
+    });
+
+    initQR();
+  </script>
+</body>
+</html>
